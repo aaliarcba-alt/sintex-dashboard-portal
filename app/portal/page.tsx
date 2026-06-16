@@ -143,7 +143,7 @@ export default function PortalPage() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0 ml-auto">
-            {user?.access_level <= 1 && (
+            {(user?.access_level ?? 99) <= 1 && (
               <button onClick={() => router.push('/admin')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium btn-cyan">
                 <Shield className="w-3.5 h-3.5" /> Admin
               </button>
