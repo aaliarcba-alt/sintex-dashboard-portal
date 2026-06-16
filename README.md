@@ -160,4 +160,4 @@ The app is optimized for Lighthouse 95+:
 
 ## License
 
-Internal use only — Sintex Industries Ltd. -- Aalia
+Internal use only — Sintex Industries Ltd.

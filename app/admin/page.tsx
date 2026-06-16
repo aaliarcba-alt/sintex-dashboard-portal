@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { BarChart3, ArrowLeft, Plus, Edit2, ToggleLeft, ToggleRight, Save, X, Loader2, Shield, Database, Activity } from 'lucide-react';
@@ -16,8 +16,8 @@ interface App {
   is_active: boolean;
 }
 
-const INPUT_STYLE = {
-  background: 'rgba(255,255,255,0.05)',
+const INPUT_STYLE: React.CSSProperties = {
+  background: '#111827',
   border: '1px solid rgba(255,255,255,0.1)',
   color: 'white',
   borderRadius: '10px',
@@ -25,6 +25,7 @@ const INPUT_STYLE = {
   fontSize: '13px',
   width: '100%',
   outline: 'none',
+  colorScheme: 'dark',
 };
 
 export default function AdminPage() {
@@ -162,13 +163,13 @@ export default function AdminPage() {
               <div>
                 <label className="block text-xs mb-1.5" style={{ color: 'var(--text2)' }}>Type</label>
                 <select value={newApp.app_type} onChange={e => setNewApp(p => ({ ...p, app_type: e.target.value }))} style={INPUT_STYLE}>
-                  {['Dashboard', 'Genie', 'Automation', 'Report', 'Other'].map(t => <option key={t} value={t}>{t}</option>)}
+                  {['Dashboard', 'Genie', 'Automation', 'Report', 'Other'].map(t => <option key={t} value={t} style={{ background: '#111827', color: 'white' }}>{t}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-xs mb-1.5" style={{ color: 'var(--text2)' }}>Status</label>
                 <select value={newApp.app_status} onChange={e => setNewApp(p => ({ ...p, app_status: e.target.value }))} style={INPUT_STYLE}>
-                  {['Live', 'UAT', 'Development', 'Paused'].map(s => <option key={s} value={s}>{s}</option>)}
+                  {['Live', 'UAT', 'WIP'].map(s => <option key={s} value={s} style={{ background: '#111827', color: 'white' }}>{s}</option>)}
                 </select>
               </div>
             </div>
@@ -201,7 +202,7 @@ export default function AdminPage() {
                       <input value={editingApp.app_name} onChange={e => setEditingApp(p => p ? { ...p, app_name: e.target.value } : null)} style={INPUT_STYLE} placeholder="App name" />
                       <input value={editingApp.url_link || ''} onChange={e => setEditingApp(p => p ? { ...p, url_link: e.target.value } : null)} style={INPUT_STYLE} placeholder="URL" />
                       <select value={editingApp.app_status} onChange={e => setEditingApp(p => p ? { ...p, app_status: e.target.value } : null)} style={INPUT_STYLE}>
-                        {['Live', 'UAT', 'Development', 'Paused'].map(s => <option key={s} value={s}>{s}</option>)}
+                        {['Live', 'UAT', 'WIP'].map(s => <option key={s} value={s} style={{ background: '#111827', color: 'white' }}>{s}</option>)}
                       </select>
                     </div>
                   ) : (

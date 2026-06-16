@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Search, LogOut, Shield, BarChart3, Activity, Layers, Sparkles, Zap, X } from 'lucide-react';
+import { Search, LogOut, Shield, BarChart3, Activity, Layers, Sparkles, Zap, X, Star } from 'lucide-react';
 import AppCard from '@/components/AppCard';
 import SkeletonCard from '@/components/SkeletonCard';
 
@@ -28,22 +28,15 @@ interface User {
   access_level: number;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  Live: 'text-cyan-400 bg-cyan-400/10 border-cyan-400/30',
-  UAT: 'text-amber-400 bg-amber-400/10 border-amber-400/30',
-  Development: 'text-purple-400 bg-purple-400/10 border-purple-400/30',
-  Paused: 'text-gray-400 bg-gray-400/10 border-gray-400/30',
-};
-
 export default function PortalPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [apps, setApps] = useState<App[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [selectedDept, setSelectedDept] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [favorites, setFavorites] = useState<number[]>([]);
+  const [showFavOnly, setShowFavOnly] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -76,21 +69,24 @@ export default function PortalPage() {
     });
   };
 
-  const depts = useMemo(() => ['All', ...Array.from(new Set(apps.map(a => a.dept_name).filter(Boolean)))], [apps]);
-  const statuses = ['All', 'Live', 'UAT', 'Development', 'Paused'];
+  // Only Live and UAT as status filters
+  const statuses = ['All', 'Live', 'UAT'];
 
   const filtered = useMemo(() => apps.filter(a => {
     const matchSearch = !search || a.app_name.toLowerCase().includes(search.toLowerCase()) ||
       (a.description || '').toLowerCase().includes(search.toLowerCase()) ||
       (a.tags || []).some((t: string) => t.toLowerCase().includes(search.toLowerCase()));
-    const matchDept = selectedDept === 'All' || a.dept_name === selectedDept;
     const matchStatus = selectedStatus === 'All' || a.app_status === selectedStatus;
-    return matchSearch && matchDept && matchStatus;
-  }), [apps, search, selectedDept, selectedStatus]);
+    const matchFav = !showFavOnly || favorites.includes(a.app_id);
+    return matchSearch && matchStatus && matchFav;
+  }), [apps, search, selectedStatus, favorites, showFavOnly]);
 
+  const favApps = useMemo(() => apps.filter(a => favorites.includes(a.app_id)), [apps, favorites]);
   const liveCount = apps.filter(a => a.app_status === 'Live').length;
   const deptCount = new Set(apps.map(a => a.dept_name)).size;
   const aiCount = apps.filter(a => a.app_name.toLowerCase().includes('ai') || (a.url_link || '').includes('genie')).length;
+  const isAdmin = (user?.access_level ?? 99) <= 1;
+  const hasActiveFilters = search || selectedStatus !== 'All' || showFavOnly;
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -143,7 +139,8 @@ export default function PortalPage() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0 ml-auto">
-            {(user?.access_level ?? 99) <= 1 && (
+            {/* Only show Admin button for access_level 1 (Admin role) */}
+            {isAdmin && (
               <button onClick={() => router.push('/admin')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium btn-cyan">
                 <Shield className="w-3.5 h-3.5" /> Admin
               </button>
@@ -173,7 +170,7 @@ export default function PortalPage() {
               Welcome back, <span style={{ color: 'var(--primary)' }}>{user?.username}</span>
             </h1>
             <p className="text-sm mt-1" style={{ color: 'var(--text2)' }}>
-              {user?.role_name} · {filtered.length} dashboards available
+              {user?.role_name} · {apps.length} dashboards available
             </p>
           </motion.div>
 
@@ -197,20 +194,25 @@ export default function PortalPage() {
           </motion.div>
         </section>
 
-        {/* Filters */}
+        {/* Favourites section — only shown if user has starred something */}
+        {favApps.length > 0 && (
+          <section className="mb-8">
+            <div className="flex items-center gap-2 mb-3">
+              <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+              <span className="text-sm font-semibold text-white">Favourites</span>
+              <span className="text-xs px-2 py-0.5 rounded-lg" style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)', color: '#FBBF24' }}>{favApps.length}</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+              {favApps.map((app, i) => (
+                <AppCard key={app.app_id} app={app} index={i} isFavorite={true} onToggleFavorite={toggleFav} />
+              ))}
+            </div>
+            <div className="mt-4 border-t border-white/5" />
+          </section>
+        )}
+
+        {/* Filters — status only, no dept */}
         <div className="flex flex-wrap items-center gap-2 mb-6">
-          <div className="flex flex-wrap gap-1.5">
-            {depts.map(d => (
-              <button key={d} onClick={() => setSelectedDept(d)}
-                className="px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-                style={selectedDept === d
-                  ? { background: 'rgba(0,212,255,0.2)', border: '1px solid rgba(0,212,255,0.5)', color: '#00D4FF' }
-                  : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text2)' }}>
-                {d}
-              </button>
-            ))}
-          </div>
-          <div className="w-px h-5 bg-white/10" />
           <div className="flex gap-1.5">
             {statuses.map(s => (
               <button key={s} onClick={() => setSelectedStatus(s)}
@@ -218,15 +220,29 @@ export default function PortalPage() {
                 style={selectedStatus === s
                   ? { background: 'rgba(0,212,255,0.2)', border: '1px solid rgba(0,212,255,0.5)', color: '#00D4FF' }
                   : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text2)' }}>
-                {s !== 'All' && <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 ${s === 'Live' ? 'bg-cyan-400' : s === 'UAT' ? 'bg-amber-400' : 'bg-purple-400'}`} />}
+                {s !== 'All' && (
+                  <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 ${s === 'Live' ? 'bg-cyan-400' : 'bg-amber-400'}`} />
+                )}
                 {s}
               </button>
             ))}
           </div>
+
+          {/* Favourites toggle filter */}
+          <button
+            onClick={() => setShowFavOnly(p => !p)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
+            style={showFavOnly
+              ? { background: 'rgba(251,191,36,0.2)', border: '1px solid rgba(251,191,36,0.5)', color: '#FBBF24' }
+              : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text2)' }}>
+            <Star className={`w-3 h-3 ${showFavOnly ? 'fill-amber-400' : ''}`} />
+            Favourites
+          </button>
+
           <div className="ml-auto flex items-center gap-3">
             <span className="text-xs" style={{ color: 'var(--text2)' }}>{filtered.length} of {apps.length}</span>
-            {(search || selectedDept !== 'All' || selectedStatus !== 'All') && (
-              <button onClick={() => { setSearch(''); setSelectedDept('All'); setSelectedStatus('All'); }}
+            {hasActiveFilters && (
+              <button onClick={() => { setSearch(''); setSelectedStatus('All'); setShowFavOnly(false); }}
                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium"
                 style={{ background: 'rgba(255,45,155,0.1)', border: '1px solid rgba(255,45,155,0.3)', color: '#FF2D9B' }}>
                 <X className="w-3 h-3" /> Clear
