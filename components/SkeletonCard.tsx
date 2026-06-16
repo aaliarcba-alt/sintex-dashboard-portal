@@ -1,22 +1,22 @@
 export default function SkeletonCard() {
   return (
-    <div className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] overflow-hidden">
-      <div className="h-1 skeleton" />
-      <div className="p-5 flex flex-col gap-3">
-        <div className="flex items-start justify-between">
-          <div className="w-10 h-10 rounded-xl skeleton" />
-          <div className="w-7 h-7 rounded-lg skeleton" />
+    <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="h-0.5 skeleton" />
+      <div className="p-4 space-y-3">
+        <div className="flex justify-between">
+          <div className="skeleton w-9 h-9 rounded-xl" />
+          <div className="skeleton w-6 h-6 rounded-lg" />
         </div>
         <div className="space-y-2">
-          <div className="h-4 rounded-md skeleton w-3/4" />
-          <div className="h-3 rounded-md skeleton w-full" />
-          <div className="h-3 rounded-md skeleton w-5/6" />
+          <div className="skeleton h-4 rounded-lg w-3/4" />
+          <div className="skeleton h-3 rounded-lg w-full" />
+          <div className="skeleton h-3 rounded-lg w-2/3" />
         </div>
-        <div className="flex gap-1.5">
-          <div className="h-5 w-16 rounded-lg skeleton" />
-          <div className="h-5 w-12 rounded-lg skeleton" />
+        <div className="flex gap-2">
+          <div className="skeleton h-5 rounded-lg w-16" />
+          <div className="skeleton h-5 rounded-lg w-12" />
         </div>
-        <div className="h-8 rounded-xl skeleton w-full" />
+        <div className="skeleton h-8 rounded-xl w-full" />
       </div>
     </div>
   );

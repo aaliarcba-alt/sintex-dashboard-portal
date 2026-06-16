@@ -1,10 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
-  images: {
-    formats: ['image/avif', 'image/webp'],
-    remotePatterns: [],
+  experimental: {
+    serverComponentsExternalPackages: ['mssql'],
   },
-}
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;

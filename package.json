@@ -1,6 +1,6 @@
 {
   "name": "sintex-dashboard-portal",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -15,7 +15,10 @@
     "framer-motion": "^11.3.24",
     "lucide-react": "^0.447.0",
     "clsx": "^2.1.1",
-    "tailwind-merge": "^2.5.4"
+    "tailwind-merge": "^2.5.4",
+    "mssql": "^11.0.1",
+    "iron-session": "^8.0.4",
+    "@types/mssql": "^9.1.5"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
