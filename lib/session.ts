@@ -1,4 +1,4 @@
-import { IronSessionOptions } from 'iron-session';
+import { SessionOptions } from 'iron-session';
 
 export interface SessionData {
   user?: {
@@ -11,7 +11,7 @@ export interface SessionData {
   };
 }
 
-export const sessionOptions: IronSessionOptions = {
+export const sessionOptions: SessionOptions = {
   password: process.env.SESSION_SECRET || 'sintex-dashboard-super-secret-key-2024',
   cookieName: 'sintex_session',
   cookieOptions: {
