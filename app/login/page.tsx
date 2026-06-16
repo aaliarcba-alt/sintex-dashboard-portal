@@ -28,11 +28,7 @@ export default function LoginPage() {
         setLoading(false);
         return;
       }
-      if (data.user?.access_level <= 1) {
-        router.push('/admin');
-      } else {
-        router.push('/portal');
-      }
+      router.push('/portal');
     } catch {
       setError('Connection error. Please try again.');
       setLoading(false);
