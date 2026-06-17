@@ -55,8 +55,8 @@ function useTheme() {
   return { theme, toggleTheme };
 }
 
-function FilterDropdown({ label, value, options, onChange }: {
-  label: string; value: string; options: string[]; onChange: (v: string) => void;
+function FilterDropdown({ label, value, options, onChange, compact }: {
+  label: string; value: string; options: string[]; onChange: (v: string) => void; compact?: boolean;
 }) {
   const isActive = value !== 'All';
   return (
@@ -64,11 +64,15 @@ function FilterDropdown({ label, value, options, onChange }: {
       <select
         value={value}
         onChange={e => onChange(e.target.value)}
-        className="appearance-none pl-3 pr-8 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer focus:outline-none"
-        style={isActive
-          ? { background: 'rgba(124,58,237,0.2)', border: '1px solid rgba(124,58,237,0.5)', color: '#A78BFA' }
-          : { background: 'var(--input-bg)', border: '1px solid var(--border)', color: 'var(--text2)' }
-        }
+        className="appearance-none pl-3 pr-7 rounded-xl text-xs font-medium transition-all cursor-pointer focus:outline-none"
+        style={{
+          paddingTop: compact ? '6px' : '6px',
+          paddingBottom: compact ? '6px' : '6px',
+          ...(isActive
+            ? { background: 'var(--filter-active-bg)', border: '1px solid var(--filter-active-border)', color: 'var(--filter-active-text)' }
+            : { background: 'var(--input-bg)', border: '1px solid var(--border)', color: 'var(--text2)' }
+          )
+        }}
       >
         {options.map(o => (
           <option key={o} value={o} style={{ background: 'var(--select-bg)', color: 'var(--text)' }}>
@@ -77,7 +81,7 @@ function FilterDropdown({ label, value, options, onChange }: {
         ))}
       </select>
       <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3"
-        style={{ color: isActive ? '#A78BFA' : 'var(--text2)' }} />
+        style={{ color: isActive ? 'var(--filter-active-text)' : 'var(--text2)' }} />
     </div>
   );
 }
@@ -102,36 +106,45 @@ export default function PortalPage() {
       if (!meRes.ok) { router.push('/login'); return; }
       const { user } = await meRes.json();
       setUser(user);
+
       const appsRes = await fetch('/api/apps');
       if (appsRes.ok) {
         const { apps } = await appsRes.json();
         setApps(apps);
       }
+
       const deptRes = await fetch('/api/admin/departments');
       if (deptRes.ok) {
         const { depts } = await deptRes.json();
         setDeptTree(depts);
       }
+
+      // ── Favourites: per-user keyed by user_id ──
       try {
-        const stored = localStorage.getItem('sintex_favs');
-        if (stored) setFavorites(JSON.parse(stored));
+        const meData = await fetch('/api/auth/me').then(r => r.json());
+        const uid = meData?.user?.user_id;
+        if (uid) {
+          const stored = localStorage.getItem(`sintex_favs_${uid}`);
+          if (stored) setFavorites(JSON.parse(stored));
+        }
       } catch {}
+
       setLoading(false);
     };
     init();
   }, [router]);
 
   const toggleFav = (id: number) => {
+    if (!user) return;
     setFavorites(prev => {
       const next = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id];
-      localStorage.setItem('sintex_favs', JSON.stringify(next));
+      localStorage.setItem(`sintex_favs_${user.user_id}`, JSON.stringify(next));
       return next;
     });
   };
 
   const statuses = ['All', 'Live', 'UAT'];
 
-  // Departments and subdivisions driven from the Department table, not app tags
   const departments = useMemo(() => {
     const d = Array.from(new Set(deptTree.map(r => r.dept_name).filter(Boolean))).sort();
     return ['All', ...d];
@@ -152,7 +165,6 @@ export default function PortalPage() {
     setSelectedSubdiv('All');
   };
 
-  // Counts per type (unfiltered by type, so stat boxes always show total)
   const dashboardCount = useMemo(() => apps.filter(a => a.app_type === 'Dashboard').length, [apps]);
   const genieCount = useMemo(() => apps.filter(a => a.app_type === 'Genie').length, [apps]);
   const appCount = useMemo(() => apps.filter(a => a.app_type === 'Application').length, [apps]);
@@ -170,7 +182,7 @@ export default function PortalPage() {
   }), [apps, search, selectedStatus, selectedType, selectedDept, selectedSubdiv]);
 
   const isAdmin = (user?.access_level ?? 99) <= 1;
-  const hasActiveFilters = search || selectedStatus !== 'All' || selectedType !== 'All' || selectedDept !== 'All' || selectedSubdiv !== 'All';
+  const hasActiveFilters = !!(search || selectedStatus !== 'All' || selectedType !== 'All' || selectedDept !== 'All' || selectedSubdiv !== 'All');
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -178,41 +190,13 @@ export default function PortalPage() {
   };
 
   const statusBtnStyle = (active: boolean): React.CSSProperties => active
-    ? { background: 'rgba(0,212,255,0.2)', border: '1px solid rgba(0,212,255,0.5)', color: 'var(--primary)' }
+    ? { background: 'var(--status-active-bg)', border: '1px solid var(--status-active-border)', color: 'var(--status-active-text)' }
     : { background: 'var(--input-bg)', border: '1px solid var(--border)', color: 'var(--text2)' };
 
-  // Stat boxes config — clicking sets the type filter
   const statCards = [
-    {
-      type: 'Dashboard',
-      label: 'Dashboards',
-      value: dashboardCount,
-      icon: BarChart3,
-      activeColor: '#00D4FF',
-      activeBg: 'rgba(0,212,255,0.15)',
-      activeBorder: 'rgba(0,212,255,0.4)',
-      glow: 'rgba(0,212,255,0.15)',
-    },
-    {
-      type: 'Genie',
-      label: 'Genie',
-      value: genieCount,
-      icon: Sparkles,
-      activeColor: '#A78BFA',
-      activeBg: 'rgba(124,58,237,0.15)',
-      activeBorder: 'rgba(124,58,237,0.4)',
-      glow: 'rgba(124,58,237,0.15)',
-    },
-    {
-      type: 'Application',
-      label: 'Applications',
-      value: appCount,
-      icon: MonitorDot,
-      activeColor: '#34D399',
-      activeBg: 'rgba(52,211,153,0.15)',
-      activeBorder: 'rgba(52,211,153,0.4)',
-      glow: 'rgba(52,211,153,0.15)',
-    },
+    { type: 'Dashboard',   label: 'Dashboards',   value: dashboardCount, icon: BarChart3,   activeColor: 'var(--card-cyan)',   activeBg: 'var(--card-cyan-bg)',   activeBorder: 'var(--card-cyan-border)'   },
+    { type: 'Genie',       label: 'Genie',         value: genieCount,     icon: Sparkles,    activeColor: 'var(--card-purple)', activeBg: 'var(--card-purple-bg)', activeBorder: 'var(--card-purple-border)' },
+    { type: 'Application', label: 'Applications',  value: appCount,       icon: MonitorDot,  activeColor: 'var(--card-green)',  activeBg: 'var(--card-green-bg)',  activeBorder: 'var(--card-green-border)'  },
   ];
 
   if (loading) {
@@ -233,11 +217,15 @@ export default function PortalPage() {
     );
   }
 
+  const favApps = apps.filter(a => favorites.includes(a.app_id));
+
   return (
     <div className="min-h-screen grid-bg">
+
       {/* ── Navbar ── */}
       <header className="sticky top-0 z-50 border-b" style={{ background: 'var(--header-bg)', borderColor: 'var(--border)', backdropFilter: 'blur(20px)' }}>
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-4">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-3">
+
           {/* Logo */}
           <div className="flex items-center gap-3 shrink-0">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center"
@@ -251,7 +239,7 @@ export default function PortalPage() {
           </div>
 
           {/* Search */}
-          <div className="flex-1 max-w-lg">
+          <div className="flex-1 max-w-sm">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text2)' }} />
               <input
@@ -263,8 +251,24 @@ export default function PortalPage() {
             </div>
           </div>
 
+          {/* ── Dept + Subdivision filters — always visible in nav ── */}
+          <div className="hidden md:flex items-center gap-2 shrink-0">
+            <FilterDropdown label="All Departments" value={selectedDept} options={departments} onChange={handleDeptChange} compact />
+            {selectedDept !== 'All' && (
+              <FilterDropdown label="All Subdivisions" value={selectedSubdiv} options={subdivisions} onChange={setSelectedSubdiv} compact />
+            )}
+          </div>
+
           {/* Right actions */}
           <div className="flex items-center gap-2 shrink-0 ml-auto">
+            {hasActiveFilters && (
+              <button
+                onClick={() => { setSearch(''); setSelectedStatus('All'); setSelectedType('All'); setSelectedDept('All'); setSelectedSubdiv('All'); }}
+                className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium"
+                style={{ background: 'var(--clear-bg)', border: '1px solid var(--clear-border)', color: 'var(--clear-text)' }}>
+                <X className="w-3 h-3" /> Clear
+              </button>
+            )}
             {isAdmin && (
               <button onClick={() => router.push('/admin')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium btn-cyan">
                 <Shield className="w-3.5 h-3.5" /> Admin
@@ -292,7 +296,7 @@ export default function PortalPage() {
 
       <main className="max-w-screen-2xl mx-auto px-4 sm:px-6 pb-16">
 
-        {/* ── Hero: welcome + 3 stat boxes ── */}
+        {/* ── Hero ── */}
         <section className="py-8">
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: 'var(--text)' }}>
@@ -303,7 +307,7 @@ export default function PortalPage() {
             </p>
           </motion.div>
 
-          {/* 3 clickable stat cards that also act as type filters */}
+          {/* 3 stat/filter cards */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
             className="flex gap-3 flex-wrap">
             {statCards.map((card, i) => {
@@ -319,18 +323,18 @@ export default function PortalPage() {
                   style={{
                     background: isActive ? card.activeBg : 'var(--surface)',
                     border: `1px solid ${isActive ? card.activeBorder : 'var(--border)'}`,
-                    boxShadow: isActive ? `0 0 24px ${card.glow}` : `0 0 12px ${card.glow}`,
                     cursor: 'pointer',
                   }}
                 >
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center mb-3"
-                    style={{ background: card.glow }}>
+                    style={{ background: card.activeBg }}>
                     <card.icon className="w-4 h-4" style={{ color: card.activeColor }} />
                   </div>
                   <div className="text-2xl font-bold" style={{ color: card.activeColor }}>{card.value}</div>
-                  <div className="text-xs mt-0.5 flex items-center gap-1.5" style={{ color: isActive ? card.activeColor : 'var(--text2)' }}>
+                  <div className="text-xs mt-0.5 flex items-center gap-1.5"
+                    style={{ color: isActive ? card.activeColor : 'var(--text2)' }}>
                     {card.label}
-                    {isActive && <span className="text-xs opacity-60">✕</span>}
+                    {isActive && <span className="opacity-60">✕</span>}
                   </div>
                 </motion.button>
               );
@@ -338,33 +342,28 @@ export default function PortalPage() {
           </motion.div>
         </section>
 
-        {/* ── Favourites section ── */}
-        {favorites.length > 0 && (() => {
-          const favApps = apps.filter(a => favorites.includes(a.app_id));
-          return favApps.length > 0 ? (
-            <section className="mb-8">
-              <div className="flex items-center gap-2 mb-3">
-                <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Favourites</span>
-                <span className="text-xs px-2 py-0.5 rounded-lg"
-                  style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)', color: '#FBBF24' }}>
-                  {favApps.length}
-                </span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-                {favApps.map((app, i) => (
-                  <AppCard key={app.app_id} app={app} index={i} isFavorite={true} onToggleFavorite={toggleFav} />
-                ))}
-              </div>
-              <div className="mt-4 border-t" style={{ borderColor: 'var(--border)' }} />
-            </section>
-          ) : null;
-        })()}
+        {/* ── Favourites (per-user) ── */}
+        {favApps.length > 0 && (
+          <section className="mb-8">
+            <div className="flex items-center gap-2 mb-3">
+              <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+              <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Favourites</span>
+              <span className="text-xs px-2 py-0.5 rounded-lg"
+                style={{ background: 'var(--fav-badge-bg)', border: '1px solid var(--fav-badge-border)', color: 'var(--fav-badge-text)' }}>
+                {favApps.length}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+              {favApps.map((app, i) => (
+                <AppCard key={app.app_id} app={app} index={i} isFavorite={true} onToggleFavorite={toggleFav} />
+              ))}
+            </div>
+            <div className="mt-4 border-t" style={{ borderColor: 'var(--border)' }} />
+          </section>
+        )}
 
-        {/* ── Filter bar ── */}
+        {/* ── Filter bar: status left, count right ── */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-
-          {/* Left: All / Live / UAT */}
           <div className="flex items-center gap-2">
             {statuses.map(s => (
               <button key={s} onClick={() => setSelectedStatus(s)}
@@ -377,33 +376,7 @@ export default function PortalPage() {
               </button>
             ))}
           </div>
-
-          {/* Right: Dept + Subdivision dropdowns + count + clear */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <FilterDropdown
-              label="All Departments"
-              value={selectedDept}
-              options={departments}
-              onChange={handleDeptChange}
-            />
-            {selectedDept !== 'All' && (
-              <FilterDropdown
-                label="All Subdivisions"
-                value={selectedSubdiv}
-                options={subdivisions}
-                onChange={setSelectedSubdiv}
-              />
-            )}
-            <span className="text-xs px-2" style={{ color: 'var(--text2)' }}>{filtered.length} of {apps.length}</span>
-            {hasActiveFilters && (
-              <button
-                onClick={() => { setSearch(''); setSelectedStatus('All'); setSelectedType('All'); setSelectedDept('All'); setSelectedSubdiv('All'); }}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium"
-                style={{ background: 'rgba(255,45,155,0.1)', border: '1px solid rgba(255,45,155,0.3)', color: '#FF2D9B' }}>
-                <X className="w-3 h-3" /> Clear
-              </button>
-            )}
-          </div>
+          <span className="text-xs" style={{ color: 'var(--text2)' }}>{filtered.length} of {apps.length}</span>
         </div>
 
         {/* ── Card grid ── */}

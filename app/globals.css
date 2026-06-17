@@ -4,57 +4,134 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-/* ── DARK THEME ── */
+/* ══════════════════════════════════════
+   DARK THEME
+══════════════════════════════════════ */
 :root,
 [data-theme="dark"] {
+  /* Backgrounds */
   --bg: #080C1A;
   --bg2: #0D1226;
   --surface: #141E30;
   --surface2: #1A2540;
-  --primary: #00D4FF;
-  --primary-dim: rgba(0,212,255,0.18);
-  --accent: #FF2D9B;
-  --accent-dim: rgba(255,45,155,0.18);
-  --purple: #7C3AED;
-  --purple-dim: rgba(124,58,237,0.18);
-  --text: #E8EEFF;
-  --text2: #B0BCDA;
-  --border: rgba(255,255,255,0.10);
-  --border-glow: rgba(0,212,255,0.35);
-  --glow-cyan: 0 0 20px rgba(0,212,255,0.3);
-  --glow-pink: 0 0 20px rgba(255,45,155,0.3);
-  --input-bg: rgba(255,255,255,0.07);
-  --input-border: rgba(255,255,255,0.14);
   --header-bg: rgba(8,12,26,0.95);
   --card-bg: rgba(17,24,39,0.85);
   --select-bg: #141E30;
+
+  /* Brand */
+  --primary: #00D4FF;
+  --primary-dim: rgba(0,212,255,0.18);
+  --purple: #7C3AED;
+  --purple-dim: rgba(124,58,237,0.18);
+  --accent: #FF2D9B;
+
+  /* Text */
+  --text: #E8EEFF;
+  --text2: #B0BCDA;
+
+  /* Borders */
+  --border: rgba(255,255,255,0.10);
+  --border-glow: rgba(0,212,255,0.35);
+
+  /* Inputs */
+  --input-bg: rgba(255,255,255,0.07);
+  --input-border: rgba(255,255,255,0.14);
+
+  /* Stat cards */
+  --card-cyan: #00D4FF;
+  --card-cyan-bg: rgba(0,212,255,0.12);
+  --card-cyan-border: rgba(0,212,255,0.35);
+  --card-purple: #A78BFA;
+  --card-purple-bg: rgba(124,58,237,0.12);
+  --card-purple-border: rgba(124,58,237,0.35);
+  --card-green: #34D399;
+  --card-green-bg: rgba(52,211,153,0.12);
+  --card-green-border: rgba(52,211,153,0.35);
+
+  /* Filter states */
+  --filter-active-bg: rgba(124,58,237,0.2);
+  --filter-active-border: rgba(124,58,237,0.5);
+  --filter-active-text: #A78BFA;
+  --status-active-bg: rgba(0,212,255,0.2);
+  --status-active-border: rgba(0,212,255,0.5);
+  --status-active-text: #00D4FF;
+
+  /* Clear button */
+  --clear-bg: rgba(255,45,155,0.1);
+  --clear-border: rgba(255,45,155,0.3);
+  --clear-text: #FF2D9B;
+
+  /* Favourites badge */
+  --fav-badge-bg: rgba(251,191,36,0.1);
+  --fav-badge-border: rgba(251,191,36,0.3);
+  --fav-badge-text: #FBBF24;
 }
 
-/* ── LIGHT THEME — warm blue-slate, not blinding white ── */
+/* ══════════════════════════════════════
+   LIGHT THEME — solid, professional, no neon
+══════════════════════════════════════ */
 [data-theme="light"] {
-  --bg: #CDD8F0;
-  --bg2: #BEC9E0;
-  --surface: #D8E3F4;
-  --surface2: #C8D4EB;
-  --primary: #005FAF;
-  --primary-dim: rgba(0,95,175,0.14);
-  --accent: #A8005A;
-  --accent-dim: rgba(168,0,90,0.10);
-  --purple: #4C18A0;
-  --purple-dim: rgba(76,24,160,0.12);
-  --text: #0C1A38;
-  --text2: #2E4170;
-  --border: rgba(0,40,100,0.14);
-  --border-glow: rgba(0,95,175,0.4);
-  --glow-cyan: 0 0 16px rgba(0,95,175,0.2);
-  --glow-pink: 0 0 16px rgba(168,0,90,0.2);
-  --input-bg: rgba(255,255,255,0.55);
-  --input-border: rgba(0,40,100,0.18);
-  --header-bg: rgba(205,216,240,0.97);
-  --card-bg: rgba(220,230,248,0.95);
-  --select-bg: #CDD8F0;
+  /* Backgrounds */
+  --bg: #F1F4F9;
+  --bg2: #E8ECF3;
+  --surface: #FFFFFF;
+  --surface2: #F4F6FB;
+  --header-bg: rgba(255,255,255,0.97);
+  --card-bg: #FFFFFF;
+  --select-bg: #FFFFFF;
+
+  /* Brand — desaturated for light */
+  --primary: #1D6FA4;
+  --primary-dim: rgba(29,111,164,0.1);
+  --purple: #5B35B0;
+  --purple-dim: rgba(91,53,176,0.1);
+  --accent: #B5185A;
+
+  /* Text — near black */
+  --text: #111827;
+  --text2: #4B5563;
+
+  /* Borders — subtle grey */
+  --border: rgba(0,0,0,0.10);
+  --border-glow: rgba(29,111,164,0.25);
+
+  /* Inputs */
+  --input-bg: #FFFFFF;
+  --input-border: #D1D5DB;
+
+  /* Stat cards — solid tinted backgrounds, dark text */
+  --card-cyan: #1D6FA4;
+  --card-cyan-bg: #E0F0FA;
+  --card-cyan-border: #93C5E8;
+  --card-purple: #5B35B0;
+  --card-purple-bg: #EDE9F8;
+  --card-purple-border: #C4B5F0;
+  --card-green: #16795A;
+  --card-green-bg: #D1FAE5;
+  --card-green-border: #6EE7B7;
+
+  /* Filter states */
+  --filter-active-bg: #EDE9F8;
+  --filter-active-border: #C4B5F0;
+  --filter-active-text: #5B35B0;
+  --status-active-bg: #E0F0FA;
+  --status-active-border: #93C5E8;
+  --status-active-text: #1D6FA4;
+
+  /* Clear button */
+  --clear-bg: #FEE2E2;
+  --clear-border: #FCA5A5;
+  --clear-text: #B91C1C;
+
+  /* Favourites badge */
+  --fav-badge-bg: #FEF3C7;
+  --fav-badge-border: #FCD34D;
+  --fav-badge-text: #92400E;
 }
 
+/* ══════════════════════════════════════
+   BASE
+══════════════════════════════════════ */
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 
@@ -73,57 +150,57 @@ body {
 
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.3); border-radius: 2px; }
-[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(0,95,175,0.3); }
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.3); border-radius: 2px; }
+[data-theme="light"] ::-webkit-scrollbar-thumb { background: #9CA3AF; border-radius: 2px; }
 
+/* ══════════════════════════════════════
+   COMPONENTS
+══════════════════════════════════════ */
 .neon-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
   transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
 }
-.neon-card:hover {
-  border-color: rgba(0,212,255,0.4);
-  box-shadow: 0 0 24px rgba(0,212,255,0.12), 0 4px 24px rgba(0,0,0,0.4);
+[data-theme="dark"] .neon-card:hover {
+  border-color: rgba(0,212,255,0.35);
+  box-shadow: 0 0 24px rgba(0,212,255,0.1), 0 4px 20px rgba(0,0,0,0.4);
   transform: translateY(-2px);
 }
 [data-theme="light"] .neon-card:hover {
-  border-color: rgba(0,95,175,0.4);
-  box-shadow: 0 0 16px rgba(0,95,175,0.1), 0 4px 16px rgba(0,0,0,0.08);
+  border-color: #93C5E8;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  transform: translateY(-2px);
 }
 
 .btn-cyan {
+  transition: all 0.2s;
+}
+[data-theme="dark"] .btn-cyan {
   background: linear-gradient(135deg, rgba(0,212,255,0.2), rgba(0,212,255,0.1));
   border: 1px solid rgba(0,212,255,0.5);
   color: #00D4FF;
-  transition: all 0.2s;
+}
+[data-theme="dark"] .btn-cyan:hover {
+  background: linear-gradient(135deg, rgba(0,212,255,0.3), rgba(0,212,255,0.2));
+  box-shadow: 0 0 16px rgba(0,212,255,0.35);
 }
 [data-theme="light"] .btn-cyan {
-  background: linear-gradient(135deg, rgba(0,95,175,0.18), rgba(0,95,175,0.08));
-  border: 1px solid rgba(0,95,175,0.5);
-  color: #005FAF;
+  background: #1D6FA4;
+  border: 1px solid #1D6FA4;
+  color: #FFFFFF;
 }
-.btn-cyan:hover { background: linear-gradient(135deg, rgba(0,212,255,0.3), rgba(0,212,255,0.2)); box-shadow: 0 0 16px rgba(0,212,255,0.4); }
-[data-theme="light"] .btn-cyan:hover { box-shadow: 0 0 12px rgba(0,95,175,0.25); }
+[data-theme="light"] .btn-cyan:hover {
+  background: #155F8E;
+  box-shadow: 0 2px 8px rgba(29,111,164,0.3);
+}
 
-.btn-pink {
-  background: linear-gradient(135deg, rgba(255,45,155,0.2), rgba(255,45,155,0.1));
-  border: 1px solid rgba(255,45,155,0.5);
-  color: #FF2D9B;
-}
-.btn-pink:hover { box-shadow: 0 0 16px rgba(255,45,155,0.4); }
-
-@keyframes scan {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100vh); }
-}
+/* ══════════════════════════════════════
+   ANIMATIONS
+══════════════════════════════════════ */
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
-}
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-6px); }
 }
 
 .skeleton {
@@ -138,7 +215,10 @@ body {
   border-radius: 4px;
 }
 
-.grid-bg {
+/* ══════════════════════════════════════
+   GRID BACKGROUND
+══════════════════════════════════════ */
+[data-theme="dark"] .grid-bg {
   background-image:
     linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
     linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
@@ -146,6 +226,7 @@ body {
 }
 [data-theme="light"] .grid-bg {
   background-image:
-    linear-gradient(rgba(0,95,175,0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,95,175,0.06) 1px, transparent 1px);
+    linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
