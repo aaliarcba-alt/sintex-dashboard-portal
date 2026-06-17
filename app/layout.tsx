@@ -2,14 +2,14 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Sintex Analytics Hub',
-  description: 'Enterprise analytics portal for Sintex — access all dashboards from one place.',
+  title: 'Sintex Digital Portal',
+  description: 'Enterprise digital portal for Sintex — access all dashboards from one place.',
   robots: { index: false, follow: false },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" data-theme="dark">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />

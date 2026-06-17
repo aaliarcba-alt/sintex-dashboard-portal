@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { BarChart3, Mail, Lock, AlertCircle, Loader2, Activity } from 'lucide-react';
+import { BarChart3, Mail, Lock, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -66,21 +67,17 @@ export default function LoginPage() {
           >
             <BarChart3 className="w-8 h-8 text-cyan-400" />
           </motion.div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Sintex Analytics Hub</h1>
+          <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text)' }}>Sintex Digital Portal</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text2)' }}>
             Enterprise Intelligence Portal
           </p>
-          <div className="flex items-center justify-center gap-2 mt-3">
-            <Activity className="w-3 h-3 text-cyan-400 animate-pulse" />
-            <span className="text-xs text-cyan-400/80">Systems Operational</span>
-          </div>
         </div>
 
         {/* Card */}
         <div
           className="rounded-2xl p-8"
           style={{
-            background: 'rgba(17,24,39,0.8)',
+            background: 'var(--card-bg)',
             border: '1px solid rgba(0,212,255,0.2)',
             boxShadow: '0 0 40px rgba(0,212,255,0.08), 0 24px 48px rgba(0,0,0,0.5)',
             backdropFilter: 'blur(20px)',
@@ -100,13 +97,14 @@ export default function LoginPage() {
                   onChange={e => setEmail(e.target.value)}
                   placeholder="you@sintex.com"
                   required
-                  className="w-full pl-10 pr-4 py-3 rounded-xl text-sm text-white placeholder:text-gray-600 focus:outline-none transition-all"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl text-sm placeholder:text-gray-500 focus:outline-none transition-all"
                   style={{
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
+                    background: 'var(--input-bg)',
+                    border: '1px solid var(--input-border)',
+                    color: 'var(--text)',
                   }}
                   onFocus={e => { e.target.style.borderColor = 'rgba(0,212,255,0.5)'; e.target.style.boxShadow = '0 0 12px rgba(0,212,255,0.15)'; }}
-                  onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
+                  onBlur={e => { e.target.style.borderColor = 'var(--input-border)'; e.target.style.boxShadow = 'none'; }}
                 />
               </div>
             </div>
@@ -119,19 +117,29 @@ export default function LoginPage() {
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text2)' }} />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full pl-10 pr-4 py-3 rounded-xl text-sm text-white placeholder:text-gray-600 focus:outline-none transition-all"
+                  className="w-full pl-10 pr-11 py-3 rounded-xl text-sm placeholder:text-gray-500 focus:outline-none transition-all"
                   style={{
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
+                    background: 'var(--input-bg)',
+                    border: '1px solid var(--input-border)',
+                    color: 'var(--text)',
                   }}
                   onFocus={e => { e.target.style.borderColor = 'rgba(0,212,255,0.5)'; e.target.style.boxShadow = '0 0 12px rgba(0,212,255,0.15)'; }}
-                  onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
+                  onBlur={e => { e.target.style.borderColor = 'var(--input-border)'; e.target.style.boxShadow = 'none'; }}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(p => !p)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded transition-opacity hover:opacity-80"
+                  style={{ color: 'var(--text2)' }}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
