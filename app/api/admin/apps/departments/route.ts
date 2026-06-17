@@ -5,9 +5,10 @@ import { sessionOptions, SessionData } from '@/lib/session';
 import { cookies } from 'next/headers';
 
 export async function GET() {
+  // Any logged-in user can read departments (needed for portal filter dropdowns)
   const session = await getIronSession<SessionData>(cookies(), sessionOptions);
-  if (!session.user || session.user.access_level > 1)
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!session.user)
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
     const db = await getDb();

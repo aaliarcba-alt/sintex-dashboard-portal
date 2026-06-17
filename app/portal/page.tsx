@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Search, LogOut, Shield, BarChart3, Sparkles, AppWindow, Zap, X, Star, Sun, Moon, ChevronDown } from 'lucide-react';
+import { Search, LogOut, Shield, BarChart3, Sparkles, MonitorDot, Zap, X, Star, Sun, Moon, ChevronDown } from 'lucide-react';
 import AppCard from '@/components/AppCard';
 import SkeletonCard from '@/components/SkeletonCard';
 
@@ -207,7 +207,7 @@ export default function PortalPage() {
       type: 'Application',
       label: 'Applications',
       value: appCount,
-      icon: AppWindow,
+      icon: MonitorDot,
       activeColor: '#34D399',
       activeBg: 'rgba(52,211,153,0.15)',
       activeBorder: 'rgba(52,211,153,0.4)',
