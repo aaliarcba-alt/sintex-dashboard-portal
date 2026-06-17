@@ -88,3 +88,19 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  const user = await checkAdmin();
+  if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+  try {
+    const { app_id } = await req.json();
+    const db = await getDb();
+    await db.request()
+      .input('app_id', sql.Int, app_id)
+      .query(`DELETE FROM digital.Application WHERE app_id = @app_id`);
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+  }
+}

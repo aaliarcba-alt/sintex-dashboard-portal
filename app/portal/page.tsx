@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Search, LogOut, Shield, BarChart3, Layers, Sparkles, Zap, X, Star, Sun, Moon } from 'lucide-react';
+import { Search, LogOut, Shield, BarChart3, Layers, Zap, X, Star, Sun, Moon, ChevronDown } from 'lucide-react';
 import AppCard from '@/components/AppCard';
 import SkeletonCard from '@/components/SkeletonCard';
 
@@ -15,6 +15,7 @@ interface App {
   description: string;
   url_link: string;
   dept_name: string;
+  subdivision: string;
   tags: string[];
   can_export: boolean;
   can_embed: boolean;
@@ -30,7 +31,6 @@ interface User {
 
 function useTheme() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-
   useEffect(() => {
     try {
       const saved = localStorage.getItem('sintex_theme') as 'dark' | 'light' | null;
@@ -40,15 +40,41 @@ function useTheme() {
       }
     } catch {}
   }, []);
-
   const toggleTheme = () => {
     const next = theme === 'dark' ? 'light' : 'dark';
     setTheme(next);
     document.documentElement.setAttribute('data-theme', next);
     try { localStorage.setItem('sintex_theme', next); } catch {}
   };
-
   return { theme, toggleTheme };
+}
+
+// Dropdown component
+function FilterDropdown({ label, value, options, onChange }: {
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (v: string) => void;
+}) {
+  const isActive = value !== 'All';
+  return (
+    <div className="relative">
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="appearance-none pl-3 pr-8 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer focus:outline-none"
+        style={isActive
+          ? { background: 'rgba(124,58,237,0.2)', border: '1px solid rgba(124,58,237,0.5)', color: '#A78BFA' }
+          : { background: 'var(--input-bg)', border: '1px solid var(--border)', color: 'var(--text2)' }
+        }
+      >
+        {options.map(o => (
+          <option key={o} value={o} style={{ background: 'var(--select-bg)', color: 'var(--text)' }}>{o === 'All' ? label : o}</option>
+        ))}
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3" style={{ color: isActive ? '#A78BFA' : 'var(--text2)' }} />
+    </div>
+  );
 }
 
 export default function PortalPage() {
@@ -59,7 +85,9 @@ export default function PortalPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('All');
+  const [selectedType, setSelectedType] = useState('All');
   const [selectedDept, setSelectedDept] = useState('All');
+  const [selectedSubdiv, setSelectedSubdiv] = useState('All');
   const [favorites, setFavorites] = useState<number[]>([]);
   const [showFavOnly, setShowFavOnly] = useState(false);
 
@@ -69,18 +97,15 @@ export default function PortalPage() {
       if (!meRes.ok) { router.push('/login'); return; }
       const { user } = await meRes.json();
       setUser(user);
-
       const appsRes = await fetch('/api/apps');
       if (appsRes.ok) {
         const { apps } = await appsRes.json();
         setApps(apps);
       }
-
       try {
         const stored = localStorage.getItem('sintex_favs');
         if (stored) setFavorites(JSON.parse(stored));
       } catch {}
-
       setLoading(false);
     };
     init();
@@ -95,50 +120,64 @@ export default function PortalPage() {
   };
 
   const statuses = ['All', 'Live', 'UAT'];
+  const types = ['All', 'Dashboard', 'Genie', 'Application'];
 
-  // Build unique department list from actual app data
+  // Unique dept list from app data
   const departments = useMemo(() => {
-    const depts = Array.from(new Set(apps.map(a => a.dept_name).filter(Boolean))).sort();
-    return ['All', ...depts];
+    const d = Array.from(new Set(apps.map(a => a.dept_name).filter(Boolean))).sort();
+    return ['All', ...d];
   }, [apps]);
 
+  // Subdivisions scoped to selected dept
+  const subdivisions = useMemo(() => {
+    const base = selectedDept === 'All' ? apps : apps.filter(a => a.dept_name === selectedDept);
+    const s = Array.from(new Set(base.map(a => a.subdivision).filter(Boolean))).sort();
+    return ['All', ...s];
+  }, [apps, selectedDept]);
+
+  // Reset subdivision when dept changes
+  const handleDeptChange = (v: string) => {
+    setSelectedDept(v);
+    setSelectedSubdiv('All');
+  };
+
   const filtered = useMemo(() => apps.filter(a => {
-    const matchSearch = !search || a.app_name.toLowerCase().includes(search.toLowerCase()) ||
+    const matchSearch = !search ||
+      a.app_name.toLowerCase().includes(search.toLowerCase()) ||
       (a.description || '').toLowerCase().includes(search.toLowerCase()) ||
       (a.tags || []).some((t: string) => t.toLowerCase().includes(search.toLowerCase()));
     const matchStatus = selectedStatus === 'All' || a.app_status === selectedStatus;
+    const matchType = selectedType === 'All' || a.app_type === selectedType;
     const matchDept = selectedDept === 'All' || a.dept_name === selectedDept;
+    const matchSubdiv = selectedSubdiv === 'All' || a.subdivision === selectedSubdiv;
     const matchFav = !showFavOnly || favorites.includes(a.app_id);
-    return matchSearch && matchStatus && matchDept && matchFav;
-  }), [apps, search, selectedStatus, selectedDept, favorites, showFavOnly]);
+    return matchSearch && matchStatus && matchType && matchDept && matchSubdiv && matchFav;
+  }), [apps, search, selectedStatus, selectedType, selectedDept, selectedSubdiv, favorites, showFavOnly]);
 
   const favApps = useMemo(() => apps.filter(a => favorites.includes(a.app_id)), [apps, favorites]);
   const deptCount = new Set(apps.map(a => a.dept_name)).size;
   const isAdmin = (user?.access_level ?? 99) <= 1;
-  const hasActiveFilters = search || selectedStatus !== 'All' || selectedDept !== 'All' || showFavOnly;
+  const hasActiveFilters = search || selectedStatus !== 'All' || selectedType !== 'All' || selectedDept !== 'All' || selectedSubdiv !== 'All' || showFavOnly;
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     router.push('/login');
   };
 
-  const isDark = theme === 'dark';
+  const statusBtnStyle = (active: boolean) => active
+    ? { background: 'rgba(0,212,255,0.2)', border: '1px solid rgba(0,212,255,0.5)', color: 'var(--primary)' }
+    : { background: 'var(--input-bg)', border: '1px solid var(--border)', color: 'var(--text2)' };
 
-  const filterBtn = (active: boolean, color: 'cyan' | 'amber' | 'purple') => {
-    const colors = {
-      cyan: { active: { background: 'rgba(0,212,255,0.2)', border: '1px solid rgba(0,212,255,0.5)', color: 'var(--primary)' }, inactive: { background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', color: 'var(--text2)' } },
-      amber: { active: { background: 'rgba(251,191,36,0.2)', border: '1px solid rgba(251,191,36,0.5)', color: '#FBBF24' }, inactive: { background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', color: 'var(--text2)' } },
-      purple: { active: { background: 'rgba(124,58,237,0.2)', border: '1px solid rgba(124,58,237,0.5)', color: '#A78BFA' }, inactive: { background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', color: 'var(--text2)' } },
-    };
-    return active ? colors[color].active : colors[color].inactive;
-  };
+  const favBtnStyle = (active: boolean) => active
+    ? { background: 'rgba(251,191,36,0.2)', border: '1px solid rgba(251,191,36,0.5)', color: '#FBBF24' }
+    : { background: 'var(--input-bg)', border: '1px solid var(--border)', color: 'var(--text2)' };
 
   if (loading) {
     return (
       <div className="min-h-screen grid-bg">
         <div className="h-16 border-b" style={{ background: 'var(--header-bg)', borderColor: 'var(--border)' }} />
         <div className="max-w-screen-2xl mx-auto px-6 pt-8">
-          <div className="grid grid-cols-2 gap-4 mb-8">
+          <div className="grid grid-cols-2 gap-4 mb-8 max-w-md">
             {[...Array(2)].map((_, i) => <div key={i} className="skeleton h-24 rounded-2xl" />)}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -184,18 +223,9 @@ export default function PortalPage() {
                 <Shield className="w-3.5 h-3.5" /> Admin
               </button>
             )}
-
-            {/* Theme toggle */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-xl transition-all"
-              style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text2)' }}
-              aria-label="Toggle theme"
-              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-            >
-              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            <button onClick={toggleTheme} className="p-2 rounded-xl transition-all" style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text2)' }} aria-label="Toggle theme">
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
-
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl" style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)' }}>
               <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: 'linear-gradient(135deg, var(--primary), var(--purple))', color: 'white' }}>
                 {user?.username?.[0]?.toUpperCase()}
@@ -221,12 +251,11 @@ export default function PortalPage() {
             </p>
           </motion.div>
 
-          {/* 2-col KPI cards: Total Dashboards + Departments only */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
             className="grid grid-cols-2 gap-3 max-w-md">
             {[
-              { icon: BarChart3, label: 'Total Dashboards', value: apps.length, color: 'text-cyan-400', glowColor: 'var(--primary)', glow: 'rgba(0,212,255,0.15)' },
-              { icon: Layers, label: 'Departments', value: deptCount, color: 'text-purple-400', glowColor: 'var(--purple)', glow: 'rgba(124,58,237,0.15)' },
+              { icon: BarChart3, label: 'Total Dashboards', value: apps.length, color: 'text-cyan-400', glow: 'rgba(0,212,255,0.15)' },
+              { icon: Layers, label: 'Departments', value: deptCount, color: 'text-purple-400', glow: 'rgba(124,58,237,0.15)' },
             ].map((stat, i) => (
               <motion.div key={stat.label} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}
                 className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: `0 0 20px ${stat.glow}` }}>
@@ -257,49 +286,78 @@ export default function PortalPage() {
           </section>
         )}
 
-        {/* Filter bar — status left, dept right, count + clear far right */}
+        {/* Filter bar */}
         <div className="flex flex-wrap items-center gap-2 mb-6">
-          {/* Left group: All / Live / UAT / Favourites */}
-          <div className="flex gap-1.5 flex-wrap">
-            {statuses.map(s => (
-              <button key={s} onClick={() => setSelectedStatus(s)}
-                className="px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-                style={filterBtn(selectedStatus === s, 'cyan')}>
-                {s !== 'All' && (
-                  <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 ${s === 'Live' ? 'bg-cyan-400' : 'bg-amber-400'}`} />
-                )}
-                {s}
-              </button>
-            ))}
 
-            <button
-              onClick={() => setShowFavOnly(p => !p)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-              style={filterBtn(showFavOnly, 'amber')}>
-              <Star className={`w-3 h-3 ${showFavOnly ? 'fill-amber-400' : ''}`} />
-              Favourites
+          {/* Status pills */}
+          {statuses.map(s => (
+            <button key={s} onClick={() => setSelectedStatus(s)}
+              className="px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
+              style={statusBtnStyle(selectedStatus === s)}>
+              {s !== 'All' && <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 ${s === 'Live' ? 'bg-cyan-400' : 'bg-amber-400'}`} />}
+              {s}
             </button>
-          </div>
+          ))}
 
           {/* Separator */}
-          <div className="hidden sm:block h-4 w-px mx-1" style={{ background: 'var(--border)' }} />
+          <div className="hidden sm:block h-4 w-px" style={{ background: 'var(--border)' }} />
 
-          {/* Right group: Department filters */}
-          <div className="flex gap-1.5 flex-wrap">
-            {departments.map(dept => (
-              <button key={dept} onClick={() => setSelectedDept(dept)}
+          {/* Type pills */}
+          {types.map(t => {
+            const typeColors: Record<string, { active: React.CSSProperties; dot: string }> = {
+              Dashboard: { active: { background: 'rgba(0,212,255,0.15)', border: '1px solid rgba(0,212,255,0.5)', color: 'var(--primary)' }, dot: 'bg-cyan-400' },
+              Genie:     { active: { background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.5)', color: '#A78BFA' }, dot: 'bg-purple-400' },
+              Application: { active: { background: 'rgba(52,211,153,0.15)', border: '1px solid rgba(52,211,153,0.5)', color: '#34D399' }, dot: 'bg-emerald-400' },
+            };
+            const cfg = typeColors[t];
+            const isActive = selectedType === t;
+            return (
+              <button key={t} onClick={() => setSelectedType(t)}
                 className="px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-                style={filterBtn(selectedDept === dept, 'purple')}>
-                {dept}
+                style={isActive && cfg ? cfg.active : { background: 'var(--input-bg)', border: '1px solid var(--border)', color: 'var(--text2)' }}>
+                {cfg && <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 ${isActive ? cfg.dot : 'bg-gray-500'}`} />}
+                {t}
               </button>
-            ))}
-          </div>
+            );
+          })}
+
+          {/* Separator */}
+          <div className="hidden sm:block h-4 w-px" style={{ background: 'var(--border)' }} />
+
+          {/* Favourites toggle */}
+          <button onClick={() => setShowFavOnly(p => !p)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
+            style={favBtnStyle(showFavOnly)}>
+            <Star className={`w-3 h-3 ${showFavOnly ? 'fill-amber-400' : ''}`} />
+            Favourites
+          </button>
+
+          {/* Separator */}
+          <div className="hidden sm:block h-4 w-px" style={{ background: 'var(--border)' }} />
+
+          {/* Dept dropdown */}
+          <FilterDropdown
+            label="All Departments"
+            value={selectedDept}
+            options={departments}
+            onChange={handleDeptChange}
+          />
+
+          {/* Subdivision dropdown — only show if dept is selected and has >1 subdivision */}
+          {selectedDept !== 'All' && subdivisions.length > 2 && (
+            <FilterDropdown
+              label="All Subdivisions"
+              value={selectedSubdiv}
+              options={subdivisions}
+              onChange={setSelectedSubdiv}
+            />
+          )}
 
           {/* Count + clear */}
           <div className="ml-auto flex items-center gap-3 shrink-0">
             <span className="text-xs" style={{ color: 'var(--text2)' }}>{filtered.length} of {apps.length}</span>
             {hasActiveFilters && (
-              <button onClick={() => { setSearch(''); setSelectedStatus('All'); setSelectedDept('All'); setShowFavOnly(false); }}
+              <button onClick={() => { setSearch(''); setSelectedStatus('All'); setSelectedType('All'); setSelectedDept('All'); setSelectedSubdiv('All'); setShowFavOnly(false); }}
                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium"
                 style={{ background: 'rgba(255,45,155,0.1)', border: '1px solid rgba(255,45,155,0.3)', color: '#FF2D9B' }}>
                 <X className="w-3 h-3" /> Clear
