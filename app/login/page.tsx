@@ -95,7 +95,7 @@ export default function LoginPage() {
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="you@sintex.com"
+                  placeholder="name_surname@welspun.com"
                   required
                   className="w-full pl-10 pr-4 py-3 rounded-xl text-sm placeholder:text-gray-500 focus:outline-none transition-all"
                   style={{
@@ -180,7 +180,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-xs mt-6" style={{ color: 'var(--text2)' }}>
-          Internal use only · Sintex Industries Ltd.
+          Internal use only
         </p>
       </motion.div>
     </div>

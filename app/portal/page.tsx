@@ -369,7 +369,7 @@ export default function PortalPage() {
               options={departments}
               onChange={handleDeptChange}
             />
-            {selectedDept !== 'All' && subdivisions.length > 2 && (
+            {selectedDept !== 'All' && (
               <FilterDropdown
                 label="All Subdivisions"
                 value={selectedSubdiv}
