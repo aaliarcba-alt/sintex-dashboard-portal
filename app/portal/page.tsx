@@ -29,6 +29,12 @@ interface User {
   access_level: number;
 }
 
+interface Dept {
+  dept_id: number;
+  dept_name: string;
+  subdivision: string;
+}
+
 function useTheme() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   useEffect(() => {
@@ -81,6 +87,7 @@ export default function PortalPage() {
   const { theme, toggleTheme } = useTheme();
   const [user, setUser] = useState<User | null>(null);
   const [apps, setApps] = useState<App[]>([]);
+  const [deptTree, setDeptTree] = useState<Dept[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('All');
@@ -99,6 +106,11 @@ export default function PortalPage() {
       if (appsRes.ok) {
         const { apps } = await appsRes.json();
         setApps(apps);
+      }
+      const deptRes = await fetch('/api/admin/departments');
+      if (deptRes.ok) {
+        const { depts } = await deptRes.json();
+        setDeptTree(depts);
       }
       try {
         const stored = localStorage.getItem('sintex_favs');
@@ -119,16 +131,21 @@ export default function PortalPage() {
 
   const statuses = ['All', 'Live', 'UAT'];
 
+  // Departments and subdivisions driven from the Department table, not app tags
   const departments = useMemo(() => {
-    const d = Array.from(new Set(apps.map(a => a.dept_name).filter(Boolean))).sort();
+    const d = Array.from(new Set(deptTree.map(r => r.dept_name).filter(Boolean))).sort();
     return ['All', ...d];
-  }, [apps]);
+  }, [deptTree]);
 
   const subdivisions = useMemo(() => {
-    const base = selectedDept === 'All' ? apps : apps.filter(a => a.dept_name === selectedDept);
-    const s = Array.from(new Set(base.map(a => a.subdivision).filter(Boolean))).sort();
-    return ['All', ...s];
-  }, [apps, selectedDept]);
+    if (selectedDept === 'All') return ['All'];
+    const s = deptTree
+      .filter(r => r.dept_name === selectedDept)
+      .map(r => r.subdivision)
+      .filter(Boolean)
+      .sort();
+    return ['All', ...Array.from(new Set(s))];
+  }, [deptTree, selectedDept]);
 
   const handleDeptChange = (v: string) => {
     setSelectedDept(v);
