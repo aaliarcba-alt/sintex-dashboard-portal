@@ -14,11 +14,11 @@ export async function GET() {
     const db = await getDb();
     const { user_id, access_level } = session.user;
 
-    let query: string;
+    let result;
 
-    // Admin or CEO (access_level 1) sees all apps
-    if (access_level <= 1) {
-      query = `
+    // access_level <= 2: Admin, CEO, MD, CDO — see all apps
+    if (access_level <= 2) {
+      result = await db.request().query(`
         SELECT a.app_id, a.app_name, a.app_type, a.app_status,
                a.description, a.thumbnail_url, a.url_link, a.tags,
                d.dept_name, d.subdivision,
@@ -27,28 +27,29 @@ export async function GET() {
         LEFT JOIN digital.Department d ON a.dept_id = d.dept_id
         WHERE a.is_active = 1
         ORDER BY a.app_name
-      `;
+      `);
     } else {
-      // Role-based: only show apps this user's roles can access
-      query = `
-        SELECT DISTINCT a.app_id, a.app_name, a.app_type, a.app_status,
-               a.description, a.thumbnail_url, a.url_link, a.tags,
-               d.dept_name, d.subdivision,
-               ara.can_view, ara.can_export, ara.can_embed
-        FROM digital.Application a
-        LEFT JOIN digital.Department d ON a.dept_id = d.dept_id
-        INNER JOIN digital.App_Role_Access ara ON a.app_id = ara.app_id
-        INNER JOIN digital.User_Role_Mapping urm ON ara.role_id = urm.role_id
-        WHERE urm.user_id = ${user_id}
-          AND urm.is_active = 1
-          AND ara.can_view = 1
-          AND ara.revoked_at IS NULL
-          AND a.is_active = 1
-        ORDER BY a.app_name
-      `;
+      // Role-based: parameterised query — no SQL injection risk
+      result = await db.request()
+        .input('user_id', sql.Int, user_id)
+        .query(`
+          SELECT DISTINCT
+                 a.app_id, a.app_name, a.app_type, a.app_status,
+                 a.description, a.thumbnail_url, a.url_link, a.tags,
+                 d.dept_name, d.subdivision,
+                 ara.can_view, ara.can_export, ara.can_embed
+          FROM digital.Application a
+          LEFT JOIN digital.Department d ON a.dept_id = d.dept_id
+          INNER JOIN digital.App_Role_Access ara ON a.app_id = ara.app_id
+          INNER JOIN digital.User_Role_Mapping urm ON ara.role_id = urm.role_id
+          WHERE urm.user_id = @user_id
+            AND urm.is_active = 1
+            AND ara.can_view = 1
+            AND ara.revoked_at IS NULL
+            AND a.is_active = 1
+          ORDER BY a.app_name
+        `);
     }
-
-    const result = await db.request().query(query);
 
     const apps = result.recordset.map((row: any) => ({
       app_id: row.app_id,

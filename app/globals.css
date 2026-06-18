@@ -9,7 +9,6 @@
 ══════════════════════════════════════ */
 :root,
 [data-theme="dark"] {
-  /* Backgrounds */
   --bg: #080C1A;
   --bg2: #0D1226;
   --surface: #141E30;
@@ -17,27 +16,17 @@
   --header-bg: rgba(8,12,26,0.95);
   --card-bg: rgba(17,24,39,0.85);
   --select-bg: #141E30;
-
-  /* Brand */
   --primary: #00D4FF;
   --primary-dim: rgba(0,212,255,0.18);
   --purple: #7C3AED;
   --purple-dim: rgba(124,58,237,0.18);
   --accent: #FF2D9B;
-
-  /* Text */
   --text: #E8EEFF;
   --text2: #B0BCDA;
-
-  /* Borders */
-  --border: rgba(255,255,255,0.10);
+  --border: rgba(255,255,255,0.08);
   --border-glow: rgba(0,212,255,0.35);
-
-  /* Inputs */
   --input-bg: rgba(255,255,255,0.07);
   --input-border: rgba(255,255,255,0.14);
-
-  /* Stat cards */
   --card-cyan: #00D4FF;
   --card-cyan-bg: rgba(0,212,255,0.12);
   --card-cyan-border: rgba(0,212,255,0.35);
@@ -47,59 +36,42 @@
   --card-green: #34D399;
   --card-green-bg: rgba(52,211,153,0.12);
   --card-green-border: rgba(52,211,153,0.35);
-
-  /* Filter states */
   --filter-active-bg: rgba(124,58,237,0.2);
   --filter-active-border: rgba(124,58,237,0.5);
   --filter-active-text: #A78BFA;
   --status-active-bg: rgba(0,212,255,0.2);
   --status-active-border: rgba(0,212,255,0.5);
   --status-active-text: #00D4FF;
-
-  /* Clear button */
   --clear-bg: rgba(255,45,155,0.1);
   --clear-border: rgba(255,45,155,0.3);
   --clear-text: #FF2D9B;
-
-  /* Favourites badge */
   --fav-badge-bg: rgba(251,191,36,0.1);
   --fav-badge-border: rgba(251,191,36,0.3);
   --fav-badge-text: #FBBF24;
 }
 
 /* ══════════════════════════════════════
-   LIGHT THEME — solid, professional, no neon
+   LIGHT THEME — 100% solid, no neon, no rgba tricks
 ══════════════════════════════════════ */
 [data-theme="light"] {
-  /* Backgrounds */
   --bg: #F1F4F9;
-  --bg2: #E8ECF3;
+  --bg2: #E5E9F2;
   --surface: #FFFFFF;
   --surface2: #F4F6FB;
-  --header-bg: rgba(255,255,255,0.97);
+  --header-bg: #FFFFFF;
   --card-bg: #FFFFFF;
   --select-bg: #FFFFFF;
-
-  /* Brand — desaturated for light */
   --primary: #1D6FA4;
-  --primary-dim: rgba(29,111,164,0.1);
+  --primary-dim: #E0F0FA;
   --purple: #5B35B0;
-  --purple-dim: rgba(91,53,176,0.1);
+  --purple-dim: #EDE9F8;
   --accent: #B5185A;
-
-  /* Text — near black */
   --text: #111827;
   --text2: #4B5563;
-
-  /* Borders — subtle grey */
-  --border: rgba(0,0,0,0.10);
-  --border-glow: rgba(29,111,164,0.25);
-
-  /* Inputs */
+  --border: #E5E7EB;
+  --border-glow: #93C5E8;
   --input-bg: #FFFFFF;
   --input-border: #D1D5DB;
-
-  /* Stat cards — solid tinted backgrounds, dark text */
   --card-cyan: #1D6FA4;
   --card-cyan-bg: #E0F0FA;
   --card-cyan-border: #93C5E8;
@@ -109,21 +81,15 @@
   --card-green: #16795A;
   --card-green-bg: #D1FAE5;
   --card-green-border: #6EE7B7;
-
-  /* Filter states */
   --filter-active-bg: #EDE9F8;
   --filter-active-border: #C4B5F0;
   --filter-active-text: #5B35B0;
   --status-active-bg: #E0F0FA;
   --status-active-border: #93C5E8;
   --status-active-text: #1D6FA4;
-
-  /* Clear button */
   --clear-bg: #FEE2E2;
   --clear-border: #FCA5A5;
   --clear-text: #B91C1C;
-
-  /* Favourites badge */
   --fav-badge-bg: #FEF3C7;
   --fav-badge-border: #FCD34D;
   --fav-badge-text: #92400E;
@@ -156,26 +122,8 @@ body {
 /* ══════════════════════════════════════
    COMPONENTS
 ══════════════════════════════════════ */
-.neon-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
-}
-[data-theme="dark"] .neon-card:hover {
-  border-color: rgba(0,212,255,0.35);
-  box-shadow: 0 0 24px rgba(0,212,255,0.1), 0 4px 20px rgba(0,0,0,0.4);
-  transform: translateY(-2px);
-}
-[data-theme="light"] .neon-card:hover {
-  border-color: #93C5E8;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-  transform: translateY(-2px);
-}
+.btn-cyan { transition: all 0.2s; }
 
-.btn-cyan {
-  transition: all 0.2s;
-}
 [data-theme="dark"] .btn-cyan {
   background: linear-gradient(135deg, rgba(0,212,255,0.2), rgba(0,212,255,0.1));
   border: 1px solid rgba(0,212,255,0.5);
@@ -183,7 +131,7 @@ body {
 }
 [data-theme="dark"] .btn-cyan:hover {
   background: linear-gradient(135deg, rgba(0,212,255,0.3), rgba(0,212,255,0.2));
-  box-shadow: 0 0 16px rgba(0,212,255,0.35);
+  box-shadow: 0 0 16px rgba(0,212,255,0.3);
 }
 [data-theme="light"] .btn-cyan {
   background: #1D6FA4;
@@ -192,11 +140,11 @@ body {
 }
 [data-theme="light"] .btn-cyan:hover {
   background: #155F8E;
-  box-shadow: 0 2px 8px rgba(29,111,164,0.3);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
 /* ══════════════════════════════════════
-   ANIMATIONS
+   SKELETON
 ══════════════════════════════════════ */
 @keyframes shimmer {
   0% { background-position: 200% 0; }
@@ -220,13 +168,13 @@ body {
 ══════════════════════════════════════ */
 [data-theme="dark"] .grid-bg {
   background-image:
-    linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    linear-gradient(rgba(0,212,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.025) 1px, transparent 1px);
   background-size: 40px 40px;
 }
 [data-theme="light"] .grid-bg {
   background-image:
-    linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
+    linear-gradient(#E5E7EB 1px, transparent 1px),
+    linear-gradient(90deg, #E5E7EB 1px, transparent 1px);
   background-size: 40px 40px;
 }

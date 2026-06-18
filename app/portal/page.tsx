@@ -143,7 +143,7 @@ export default function PortalPage() {
     });
   };
 
-  const statuses = ['All', 'Live', 'UAT'];
+  const statuses = ['All', 'Live', 'Development'];
 
   const departments = useMemo(() => {
     const d = Array.from(new Set(deptTree.map(r => r.dept_name).filter(Boolean))).sort();
@@ -167,7 +167,7 @@ export default function PortalPage() {
 
   const dashboardCount = useMemo(() => apps.filter(a => a.app_type === 'Dashboard').length, [apps]);
   const genieCount = useMemo(() => apps.filter(a => a.app_type === 'Genie').length, [apps]);
-  const appCount = useMemo(() => apps.filter(a => a.app_type === 'Application').length, [apps]);
+  const appCount = useMemo(() => apps.filter(a => a.app_type === 'Other').length, [apps]);
 
   const filtered = useMemo(() => apps.filter(a => {
     const matchSearch = !search ||
@@ -196,7 +196,7 @@ export default function PortalPage() {
   const statCards = [
     { type: 'Dashboard',   label: 'Dashboards',   value: dashboardCount, icon: BarChart3,   activeColor: 'var(--card-cyan)',   activeBg: 'var(--card-cyan-bg)',   activeBorder: 'var(--card-cyan-border)'   },
     { type: 'Genie',       label: 'Genie',         value: genieCount,     icon: Sparkles,    activeColor: 'var(--card-purple)', activeBg: 'var(--card-purple-bg)', activeBorder: 'var(--card-purple-border)' },
-    { type: 'Application', label: 'Applications',  value: appCount,       icon: MonitorDot,  activeColor: 'var(--card-green)',  activeBg: 'var(--card-green-bg)',  activeBorder: 'var(--card-green-border)'  },
+    { type: 'Other',       label: 'Applications',  value: appCount,       icon: MonitorDot,  activeColor: 'var(--card-green)',  activeBg: 'var(--card-green-bg)',  activeBorder: 'var(--card-green-border)'  },
   ];
 
   if (loading) {
@@ -370,7 +370,7 @@ export default function PortalPage() {
                 className="px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
                 style={statusBtnStyle(selectedStatus === s)}>
                 {s !== 'All' && (
-                  <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 ${s === 'Live' ? 'bg-cyan-400' : 'bg-amber-400'}`} />
+                  <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 ${s === 'Live' ? 'bg-cyan-400' : 'bg-purple-400'}`} />
                 )}
                 {s}
               </button>

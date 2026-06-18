@@ -270,7 +270,9 @@ export default function AdminPage() {
                 <SelectWrap>
                   <select value={newApp.app_type} onChange={e => setNewApp(p => ({ ...p, app_type: e.target.value }))} style={SELECT}>
                     {['Dashboard', 'Genie', 'Automation', 'Report', 'Other'].map(t => (
-                      <option key={t} value={t} style={{ background: 'var(--select-bg)', color: 'var(--text)' }}>{t}</option>
+                      <option key={t} value={t} style={{ background: 'var(--select-bg)', color: 'var(--text)' }}>
+                        {t === 'Other' ? 'Application' : t}
+                      </option>
                     ))}
                   </select>
                 </SelectWrap>
@@ -280,7 +282,7 @@ export default function AdminPage() {
                 <label className="block text-xs mb-1.5" style={{ color: 'var(--text2)' }}>Status</label>
                 <SelectWrap>
                   <select value={newApp.app_status} onChange={e => setNewApp(p => ({ ...p, app_status: e.target.value }))} style={SELECT}>
-                    {['Live', 'UAT', 'WIP'].map(s => (
+                    {['Live', 'Development', 'Paused', 'Deprecated'].map(s => (
                       <option key={s} value={s} style={{ background: 'var(--select-bg)', color: 'var(--text)' }}>{s}</option>
                     ))}
                   </select>
@@ -319,7 +321,7 @@ export default function AdminPage() {
                       <input value={editingApp.url_link || ''} onChange={e => setEditingApp(p => p ? { ...p, url_link: e.target.value } : null)} style={INPUT} placeholder="URL" />
                       <SelectWrap>
                         <select value={editingApp.app_status} onChange={e => setEditingApp(p => p ? { ...p, app_status: e.target.value } : null)} style={SELECT}>
-                          {['Live', 'UAT', 'WIP'].map(s => <option key={s} value={s} style={{ background: 'var(--select-bg)', color: 'var(--text)' }}>{s}</option>)}
+                          {['Live', 'Development', 'Paused', 'Deprecated'].map(s => <option key={s} value={s} style={{ background: 'var(--select-bg)', color: 'var(--text)' }}>{s}</option>)}
                         </select>
                       </SelectWrap>
                     </div>
