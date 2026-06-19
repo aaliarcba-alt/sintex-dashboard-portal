@@ -16,6 +16,9 @@ interface App {
   dept_name: string;
   subdivision: string;
   description: string;
+  tags: string[];
+  can_export: boolean;
+  can_embed: boolean;
 }
 
 interface SessionUser {
