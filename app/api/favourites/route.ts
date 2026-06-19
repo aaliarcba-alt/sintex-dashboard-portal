@@ -5,8 +5,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getIronSession } from 'iron-session';
 import { SessionData, sessionOptions } from '@/lib/session';
-import sql from 'mssql';
-import { getDbPool } from '@/lib/db';
+
+import { getDb as getDbPool, sql } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
   try {
