@@ -1,13 +1,9 @@
-// app/portal/page.tsx
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Search, LogOut, Shield, BarChart3, Sparkles, AppWindow,
-  X, Star, Sun, Moon, ChevronDown,
-} from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Search, LogOut, Shield, BarChart3, Sparkles, MonitorDot, Zap, X, Star, Sun, Moon, ChevronDown } from 'lucide-react';
 import AppCard from '@/components/AppCard';
 import SkeletonCard from '@/components/SkeletonCard';
 
@@ -33,6 +29,12 @@ interface User {
   access_level: number;
 }
 
+interface Dept {
+  dept_id: number;
+  dept_name: string;
+  subdivision: string;
+}
+
 function useTheme() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   useEffect(() => {
@@ -53,8 +55,8 @@ function useTheme() {
   return { theme, toggleTheme };
 }
 
-function FilterDropdown({ label, value, options, onChange }: {
-  label: string; value: string; options: string[]; onChange: (v: string) => void;
+function FilterDropdown({ label, value, options, onChange, compact }: {
+  label: string; value: string; options: string[]; onChange: (v: string) => void; compact?: boolean;
 }) {
   const isActive = value !== 'All';
   return (
@@ -62,18 +64,24 @@ function FilterDropdown({ label, value, options, onChange }: {
       <select
         value={value}
         onChange={e => onChange(e.target.value)}
-        className="appearance-none pl-3 pr-8 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer focus:outline-none"
-        style={isActive
-          ? { background: 'var(--primary)', color: '#000', border: 'none' }
-          : { background: 'var(--surface2)', color: 'var(--text2)', border: '1px solid var(--border)' }}
+        className="appearance-none pl-3 pr-7 rounded-xl text-xs font-medium transition-all cursor-pointer focus:outline-none"
+        style={{
+          paddingTop: compact ? '6px' : '6px',
+          paddingBottom: compact ? '6px' : '6px',
+          ...(isActive
+            ? { background: 'var(--filter-active-bg)', border: '1px solid var(--filter-active-border)', color: 'var(--filter-active-text)' }
+            : { background: 'var(--input-bg)', border: '1px solid var(--border)', color: 'var(--text2)' }
+          )
+        }}
       >
-        <option value="All">{label}</option>
-        {options.map(o => <option key={o} value={o}>{o}</option>)}
+        {options.map(o => (
+          <option key={o} value={o} style={{ background: 'var(--select-bg)', color: 'var(--text)' }}>
+            {o === 'All' ? label : o}
+          </option>
+        ))}
       </select>
-      <ChevronDown
-        className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none"
-        style={{ color: isActive ? '#000' : 'var(--text2)' }}
-      />
+      <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3"
+        style={{ color: isActive ? 'var(--filter-active-text)' : 'var(--text2)' }} />
     </div>
   );
 }
@@ -81,15 +89,16 @@ function FilterDropdown({ label, value, options, onChange }: {
 export default function PortalPage() {
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
-
-  const [user, setUser]                     = useState<User | null>(null);
-  const [apps, setApps]                     = useState<App[]>([]);
-  const [loading, setLoading]               = useState(true);
-  const [search, setSearch]                 = useState('');
+  const [user, setUser] = useState<User | null>(null);
+  const [apps, setApps] = useState<App[]>([]);
+  const [deptTree, setDeptTree] = useState<Dept[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('All');
-  const [selectedDept, setSelectedDept]     = useState('All');
+  const [selectedType, setSelectedType] = useState('All');
+  const [selectedDept, setSelectedDept] = useState('All');
   const [selectedSubdiv, setSelectedSubdiv] = useState('All');
-  const [favourites, setFavourites]         = useState<number[]>([]);
+  const [favorites, setFavorites] = useState<number[]>([]);
 
   useEffect(() => {
     const init = async () => {
@@ -98,275 +107,262 @@ export default function PortalPage() {
       const { user } = await meRes.json();
       setUser(user);
 
-      const [appsRes, favRes] = await Promise.all([
+      const [appsRes, deptRes, favRes] = await Promise.all([
         fetch('/api/apps'),
-        fetch('/api/favourites'),
+        fetch('/api/admin/departments'),
+        fetch('/api/favourites'),   // ← DB-backed favourites
       ]);
+
       if (appsRes.ok) { const { apps } = await appsRes.json(); setApps(apps); }
-      if (favRes.ok)  { const { favourites } = await favRes.json(); setFavourites(favourites); }
+      if (deptRes.ok) { const { depts } = await deptRes.json(); setDeptTree(depts); }
+      if (favRes.ok)  { const { favourites } = await favRes.json(); setFavorites(favourites); }
+
       setLoading(false);
     };
     init();
   }, [router]);
 
-  const toggleFav = useCallback((id: number) => {
-    setFavourites(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-  }, []);
-
-  const depts = useMemo(() => {
-    const set = new Set(apps.map(a => a.dept_name).filter(Boolean));
-    return Array.from(set).sort();
-  }, [apps]);
-
-  const subdivs = useMemo(() => {
-    const base = selectedDept === 'All' ? apps : apps.filter(a => a.dept_name === selectedDept);
-    const set = new Set(base.map(a => a.subdivision).filter(Boolean));
-    return Array.from(set).sort();
-  }, [apps, selectedDept]);
-
-  useEffect(() => { setSelectedSubdiv('All'); }, [selectedDept]);
-
-  // Favourited apps (always shown at top, unaffected by filters)
-  const favouriteApps = useMemo(() =>
-    apps.filter(a => favourites.includes(a.app_id)),
-  [apps, favourites]);
-
-  // Main filtered grid (excludes favourites to avoid duplication)
-  const filtered = useMemo(() => {
-    return apps.filter(app => {
-      if (favourites.includes(app.app_id)) return false; // shown in fav section
-      if (selectedStatus !== 'All' && app.app_status !== selectedStatus) return false;
-      if (selectedDept   !== 'All' && app.dept_name   !== selectedDept)   return false;
-      if (selectedSubdiv !== 'All' && app.subdivision  !== selectedSubdiv) return false;
-      if (search) {
-        const q = search.toLowerCase();
-        return (
-          app.app_name.toLowerCase().includes(q) ||
-          (app.description ?? '').toLowerCase().includes(q) ||
-          (app.dept_name   ?? '').toLowerCase().includes(q)
-        );
-      }
-      return true;
-    });
-  }, [apps, search, selectedStatus, selectedDept, selectedSubdiv, favourites]);
-
-  const counts = useMemo(() => ({
-    Dashboard:   apps.filter(a => a.app_type === 'Dashboard').length,
-    Genie:       apps.filter(a => a.app_type === 'Genie').length,
-    Application: apps.filter(a => a.app_type === 'Application').length,
-  }), [apps]);
-
-  const clearAll = () => {
-    setSearch(''); setSelectedStatus('All');
-    setSelectedDept('All'); setSelectedSubdiv('All');
+  // ── Toggle: optimistic UI + DB write ──
+  const toggleFav = (id: number) => {
+    setFavorites(prev => prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]);
+    // API call is fired inside AppCard (handleFav), so no duplicate call needed here
   };
 
-  const hasFilters = search || selectedStatus !== 'All' || selectedDept !== 'All' || selectedSubdiv !== 'All';
+  const statuses = ['All', 'Live', 'Development'];
+
+  const departments = useMemo(() => {
+    const d = Array.from(new Set(deptTree.map(r => r.dept_name).filter(Boolean))).sort();
+    return ['All', ...d];
+  }, [deptTree]);
+
+  const subdivisions = useMemo(() => {
+    if (selectedDept === 'All') return ['All'];
+    const s = deptTree
+      .filter(r => r.dept_name === selectedDept)
+      .map(r => r.subdivision)
+      .filter(Boolean)
+      .sort();
+    return ['All', ...Array.from(new Set(s))];
+  }, [deptTree, selectedDept]);
+
+  const handleDeptChange = (v: string) => {
+    setSelectedDept(v);
+    setSelectedSubdiv('All');
+  };
+
+  const dashboardCount = useMemo(() => apps.filter(a => a.app_type === 'Dashboard').length, [apps]);
+  const genieCount     = useMemo(() => apps.filter(a => a.app_type === 'Genie').length, [apps]);
+  const appCount       = useMemo(() => apps.filter(a => a.app_type === 'Other').length, [apps]);
+
+  const filtered = useMemo(() => apps.filter(a => {
+    const matchSearch = !search ||
+      a.app_name.toLowerCase().includes(search.toLowerCase()) ||
+      (a.description || '').toLowerCase().includes(search.toLowerCase()) ||
+      (a.tags || []).some((t: string) => t.toLowerCase().includes(search.toLowerCase()));
+    const matchStatus = selectedStatus === 'All' || a.app_status === selectedStatus;
+    const matchType   = selectedType   === 'All' || a.app_type   === selectedType;
+    const matchDept   = selectedDept   === 'All' || a.dept_name  === selectedDept;
+    const matchSubdiv = selectedSubdiv === 'All' || a.subdivision === selectedSubdiv;
+    return matchSearch && matchStatus && matchType && matchDept && matchSubdiv;
+  }), [apps, search, selectedStatus, selectedType, selectedDept, selectedSubdiv]);
+
+  const isAdmin = (user?.access_level ?? 99) <= 1;
+  const hasActiveFilters = !!(search || selectedStatus !== 'All' || selectedType !== 'All' || selectedDept !== 'All' || selectedSubdiv !== 'All');
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.push('/login');
+  };
+
+  const statusBtnStyle = (active: boolean): React.CSSProperties => active
+    ? { background: 'var(--status-active-bg)', border: '1px solid var(--status-active-border)', color: 'var(--status-active-text)' }
+    : { background: 'var(--input-bg)', border: '1px solid var(--border)', color: 'var(--text2)' };
 
   const statCards = [
-    { label: 'Dashboards',   count: counts.Dashboard,   icon: <BarChart3  className="w-5 h-5" /> },
-    { label: 'Genie',        count: counts.Genie,        icon: <Sparkles   className="w-5 h-5" /> },
-    { label: 'Applications', count: counts.Application,  icon: <AppWindow  className="w-5 h-5" /> },
+    { type: 'Dashboard', label: 'Dashboards',  value: dashboardCount, icon: BarChart3,  activeColor: 'var(--card-cyan)',   activeBg: 'var(--card-cyan-bg)',   activeBorder: 'var(--card-cyan-border)'   },
+    { type: 'Genie',     label: 'Genie',        value: genieCount,     icon: Sparkles,   activeColor: 'var(--card-purple)', activeBg: 'var(--card-purple-bg)', activeBorder: 'var(--card-purple-border)' },
+    { type: 'Other',     label: 'Applications', value: appCount,       icon: MonitorDot, activeColor: 'var(--card-green)',  activeBg: 'var(--card-green-bg)',  activeBorder: 'var(--card-green-border)'  },
   ];
 
+  if (loading) {
+    return (
+      <div className="min-h-screen grid-bg">
+        <div className="h-16 border-b" style={{ background: 'var(--header-bg)', borderColor: 'var(--border)' }} />
+        <div className="max-w-screen-2xl mx-auto px-6 pt-8">
+          <div className="h-8 w-64 skeleton rounded-xl mb-2" />
+          <div className="h-4 w-40 skeleton rounded-lg mb-8" />
+          <div className="grid grid-cols-3 gap-4 mb-8 max-w-xl">
+            {[...Array(3)].map((_, i) => <div key={i} className="skeleton h-24 rounded-2xl" />)}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {[...Array(8)].map((_, i) => <SkeletonCard key={i} />)}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const favApps = apps.filter(a => favorites.includes(a.app_id));
+
   return (
-    <div className="min-h-screen grid-bg" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+    <div className="min-h-screen grid-bg">
 
-      {/* Navbar */}
-      <header
-        className="sticky top-0 z-30 flex items-center gap-3 px-4 md:px-6 py-3 border-b"
-        style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
-      >
-        <span className="font-bold text-sm tracking-tight whitespace-nowrap" style={{ color: 'var(--primary)' }}>
-          Sintex Digital Portal
-        </span>
+      {/* ── Navbar ── */}
+      <header className="sticky top-0 z-50 border-b" style={{ background: 'var(--header-bg)', borderColor: 'var(--border)', backdropFilter: 'blur(20px)' }}>
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-3">
 
-        <div className="relative flex-1 max-w-sm ml-2">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: 'var(--text2)' }} />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search…"
-            className="w-full pl-8 pr-3 py-1.5 rounded-xl text-xs focus:outline-none"
-            style={{ background: 'var(--surface2)', color: 'var(--text)', border: '1px solid var(--border)' }}
-          />
-          {search && (
-            <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2">
-              <X className="w-3 h-3" style={{ color: 'var(--text2)' }} />
-            </button>
-          )}
-        </div>
-
-        <div className="hidden md:flex items-center gap-2">
-          <FilterDropdown label="Department" value={selectedDept} options={depts} onChange={setSelectedDept} />
-          {subdivs.length > 0 && (
-            <FilterDropdown label="Subdivision" value={selectedSubdiv} options={subdivs} onChange={setSelectedSubdiv} />
-          )}
-        </div>
-
-        <div className="ml-auto flex items-center gap-2">
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-lg transition-all"
-            style={{ background: 'var(--surface2)', color: 'var(--text2)' }}
-            aria-label="Toggle theme"
-          >
-            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
-
-          {user?.access_level === 1 && (
-            <button
-              onClick={() => router.push('/admin')}
-              className="hidden md:flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-              style={{ background: 'var(--surface2)', color: 'var(--text2)', border: '1px solid var(--border)' }}
-            >
-              <Shield className="w-3.5 h-3.5" />
-              Admin
-            </button>
-          )}
-
-          <button
-            onClick={async () => { await fetch('/api/auth/logout', { method: 'POST' }); router.push('/login'); }}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-            style={{ background: 'var(--surface2)', color: 'var(--text2)', border: '1px solid var(--border)' }}
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Logout</span>
-          </button>
-        </div>
-      </header>
-
-      <main className="px-4 md:px-6 py-6 max-w-7xl mx-auto">
-
-        {/* Welcome */}
-        <div className="mb-6">
-          <h1 className="text-xl font-bold" style={{ color: 'var(--text)' }}>
-            Welcome back, {user?.username ?? '…'}
-          </h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--text2)' }}>
-            {user?.role_name} · {apps.length} apps available
-          </p>
-        </div>
-
-        {/* Stat cards */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          {statCards.map(({ label, count, icon }) => (
-            <div key={label} className="flex items-center gap-3 rounded-2xl p-4 border"
-              style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-              <span className="flex items-center justify-center w-9 h-9 rounded-xl"
-                style={{ background: 'var(--surface2)', color: 'var(--primary)' }}>
-                {icon}
-              </span>
-              <div>
-                <p className="text-xl font-bold leading-none" style={{ color: 'var(--text)' }}>{count}</p>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--text2)' }}>{label}</p>
-              </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg, var(--primary-dim), var(--purple-dim))', border: '1px solid var(--border-glow)' }}>
+              <BarChart3 className="w-4 h-4" style={{ color: 'var(--primary)' }} />
             </div>
-          ))}
-        </div>
+            <div className="hidden sm:block">
+              <span className="text-sm font-bold" style={{ color: 'var(--text)' }}>Sintex</span>
+              <span className="text-sm font-medium ml-1" style={{ color: 'var(--text2)' }}>Digital Portal</span>
+            </div>
+          </div>
 
-        {/* ── Favourites section ── */}
-        <AnimatePresence>
-          {!loading && favouriteApps.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className="mb-8"
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Favourites</h2>
-                <span
-                  className="text-[11px] font-bold px-1.5 py-0.5 rounded-full"
-                  style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}
-                >
-                  {favouriteApps.length}
-                </span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {favouriteApps.map(app => (
-                  <AppCard
-                    key={app.app_id}
-                    app={app}
-                    isFav={true}
-                    onToggleFav={toggleFav}
-                  />
-                ))}
-              </div>
-              {/* Divider */}
-              <div className="mt-6 border-t" style={{ borderColor: 'var(--border)' }} />
-            </motion.div>
-          )}
-        </AnimatePresence>
+          <div className="flex-1 max-w-sm">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text2)' }} />
+              <input
+                type="search" value={search} onChange={e => setSearch(e.target.value)}
+                placeholder="Search dashboards, tags…"
+                className="w-full pl-9 pr-4 py-2 text-sm rounded-xl focus:outline-none transition-all"
+                style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text)' }}
+              />
+            </div>
+          </div>
 
-        {/* Filter bar */}
-        <div className="flex flex-wrap items-center gap-2 mb-5">
-          {['All', 'Live', 'UAT'].map(s => {
-            const active = selectedStatus === s;
-            return (
-              <button key={s}
-                onClick={() => setSelectedStatus(s)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-                style={active
-                  ? { background: 'var(--primary)', color: '#000' }
-                  : { background: 'var(--surface2)', color: 'var(--text2)', border: '1px solid var(--border)' }}
-              >
-                {s !== 'All' && (
-                  <span className="w-1.5 h-1.5 rounded-full"
-                    style={{ background: s === 'Live' ? '#22c55e' : '#f59e0b' }} />
-                )}
-                {s}
-              </button>
-            );
-          })}
-
-          {/* Mobile dropdowns */}
-          <div className="flex md:hidden items-center gap-2 ml-auto">
-            <FilterDropdown label="Dept"   value={selectedDept}   options={depts}   onChange={setSelectedDept} />
-            {subdivs.length > 0 && (
-              <FilterDropdown label="Sub" value={selectedSubdiv} options={subdivs} onChange={setSelectedSubdiv} />
+          <div className="hidden md:flex items-center gap-2 shrink-0">
+            <FilterDropdown label="All Departments" value={selectedDept} options={departments} onChange={handleDeptChange} compact />
+            {selectedDept !== 'All' && (
+              <FilterDropdown label="All Subdivisions" value={selectedSubdiv} options={subdivisions} onChange={setSelectedSubdiv} compact />
             )}
           </div>
 
-          {hasFilters && (
-            <button onClick={clearAll}
-              className="ml-auto flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium"
-              style={{ background: 'var(--surface2)', color: 'var(--text2)', border: '1px solid var(--border)' }}
-            >
-              <X className="w-3 h-3" /> Clear
+          <div className="flex items-center gap-2 shrink-0 ml-auto">
+            {hasActiveFilters && (
+              <button
+                onClick={() => { setSearch(''); setSelectedStatus('All'); setSelectedType('All'); setSelectedDept('All'); setSelectedSubdiv('All'); }}
+                className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium"
+                style={{ background: 'var(--clear-bg)', border: '1px solid var(--clear-border)', color: 'var(--clear-text)' }}>
+                <X className="w-3 h-3" /> Clear
+              </button>
+            )}
+            {isAdmin && (
+              <button onClick={() => router.push('/admin')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium btn-cyan">
+                <Shield className="w-3.5 h-3.5" /> Admin
+              </button>
+            )}
+            <button onClick={toggleTheme} className="p-2 rounded-xl transition-all"
+              style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text2)' }}
+              aria-label="Toggle theme">
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
-          )}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl"
+              style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)' }}>
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+                style={{ background: 'linear-gradient(135deg, var(--primary), var(--purple))', color: 'white' }}>
+                {user?.username?.[0]?.toUpperCase()}
+              </div>
+              <span className="text-xs hidden sm:block" style={{ color: 'var(--text2)' }}>{user?.username}</span>
+            </div>
+            <button onClick={handleLogout} className="p-2 rounded-xl transition-colors hover:opacity-80" style={{ color: 'var(--text2)' }}>
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-screen-2xl mx-auto px-4 sm:px-6 pb-16">
+
+        {/* ── Hero ── */}
+        <section className="py-8">
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: 'var(--text)' }}>
+              Welcome back, <span style={{ color: 'var(--primary)' }}>{user?.username}</span>
+            </h1>
+            <p className="text-sm mt-1" style={{ color: 'var(--text2)' }}>
+              {user?.role_name} · {apps.length} dashboards available
+            </p>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+            className="flex gap-3 flex-wrap">
+            {statCards.map((card, i) => {
+              const isActive = selectedType === card.type;
+              return (
+                <motion.button key={card.type}
+                  initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.06 }}
+                  onClick={() => setSelectedType(isActive ? 'All' : card.type)}
+                  className="rounded-2xl p-4 text-left transition-all min-w-[140px]"
+                  style={{ background: isActive ? card.activeBg : 'var(--surface)', border: `1px solid ${isActive ? card.activeBorder : 'var(--border)'}`, cursor: 'pointer' }}
+                >
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center mb-3" style={{ background: card.activeBg }}>
+                    <card.icon className="w-4 h-4" style={{ color: card.activeColor }} />
+                  </div>
+                  <div className="text-2xl font-bold" style={{ color: card.activeColor }}>{card.value}</div>
+                  <div className="text-xs mt-0.5 flex items-center gap-1.5" style={{ color: isActive ? card.activeColor : 'var(--text2)' }}>
+                    {card.label}
+                    {isActive && <span className="opacity-60">✕</span>}
+                  </div>
+                </motion.button>
+              );
+            })}
+          </motion.div>
+        </section>
+
+        {/* ── Favourites section (DB-backed, shown at top) ── */}
+        {favApps.length > 0 && (
+          <section className="mb-8">
+            <div className="flex items-center gap-2 mb-3">
+              <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+              <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Favourites</span>
+              <span className="text-xs px-2 py-0.5 rounded-lg"
+                style={{ background: 'var(--fav-badge-bg)', border: '1px solid var(--fav-badge-border)', color: 'var(--fav-badge-text)' }}>
+                {favApps.length}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+              {favApps.map((app, i) => (
+                <AppCard key={app.app_id} app={app} index={i} isFavorite={true} onToggleFavorite={toggleFav} />
+              ))}
+            </div>
+            <div className="mt-4 border-t" style={{ borderColor: 'var(--border)' }} />
+          </section>
+        )}
+
+        {/* ── Filter bar ── */}
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+          <div className="flex items-center gap-2">
+            {statuses.map(s => (
+              <button key={s} onClick={() => setSelectedStatus(s)}
+                className="px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
+                style={statusBtnStyle(selectedStatus === s)}>
+                {s !== 'All' && (
+                  <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 ${s === 'Live' ? 'bg-cyan-400' : 'bg-purple-400'}`} />
+                )}
+                {s}
+              </button>
+            ))}
+          </div>
+          <span className="text-xs" style={{ color: 'var(--text2)' }}>{filtered.length} of {apps.length}</span>
         </div>
 
-        <p className="text-xs mb-4" style={{ color: 'var(--text2)' }}>
-          {loading ? 'Loading…' : `${filtered.length} result${filtered.length !== 1 ? 's' : ''}`}
-        </p>
-
-        {/* App grid */}
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <Search className="w-10 h-10 opacity-20" style={{ color: 'var(--text2)' }} />
-            <p className="text-sm" style={{ color: 'var(--text2)' }}>No apps match your filters.</p>
-            <button onClick={clearAll} className="btn-cyan text-xs px-4 py-2 rounded-xl">Clear filters</button>
+        {/* ── Card grid ── */}
+        {filtered.length === 0 ? (
+          <div className="text-center py-20">
+            <Zap className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--primary)', opacity: 0.3 }} />
+            <p className="font-medium" style={{ color: 'var(--text)' }}>No dashboards found</p>
+            <p className="text-sm mt-1" style={{ color: 'var(--text2)' }}>Try adjusting your filters</p>
           </div>
         ) : (
-          <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            <AnimatePresence>
-              {filtered.map(app => (
-                <AppCard
-                  key={app.app_id}
-                  app={app}
-                  isFav={favourites.includes(app.app_id)}
-                  onToggleFav={toggleFav}
-                />
-              ))}
-            </AnimatePresence>
-          </motion.div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+            {filtered.map((app, i) => (
+              <AppCard key={app.app_id} app={app} index={i} isFavorite={favorites.includes(app.app_id)} onToggleFavorite={toggleFav} />
+            ))}
+          </div>
         )}
       </main>
     </div>

@@ -1,9 +1,8 @@
-// components/AppCard.tsx
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ExternalLink, Star, BarChart3, Sparkles, AppWindow } from 'lucide-react';
+import { ExternalLink, Star, BarChart2, TrendingUp, Truck, DollarSign, Factory, ShoppingCart, Sparkles, MonitorDot } from 'lucide-react';
 
 interface App {
   app_id: number;
@@ -16,49 +15,82 @@ interface App {
   subdivision: string;
   tags: string[];
   can_export: boolean;
-  can_embed: boolean;
 }
 
-interface AppCardProps {
-  app: App;
-  isFav: boolean;
-  onToggleFav: (id: number) => void;
-}
+const deptIcons: Record<string, React.ElementType> = {
+  Sales: TrendingUp,
+  Finance: DollarSign,
+  SCM: Factory,
+  SM: ShoppingCart,
+  Logistics: Truck,
+  PPC: BarChart2,
+};
 
-const TYPE_CONFIG: Record<string, { icon: React.ReactNode; gradient: string; iconBg: string; iconColor: string }> = {
-  Dashboard: {
-    icon: <BarChart3 className="w-5 h-5" />,
-    gradient: 'linear-gradient(90deg, #00d4ff, #0099ff)',
-    iconBg: 'rgba(0,212,255,0.15)',
-    iconColor: '#00d4ff',
-  },
+const typeConfig: Record<string, { icon: React.ElementType; stripDark: string; stripLight: string; iconBgDark: string; iconBgLight: string; iconColor: string }> = {
   Genie: {
-    icon: <Sparkles className="w-5 h-5" />,
-    gradient: 'linear-gradient(90deg, #a855f7, #ec4899)',
-    iconBg: 'rgba(168,85,247,0.15)',
-    iconColor: '#a855f7',
+    icon: Sparkles,
+    stripDark: 'linear-gradient(90deg, #7C3AED, #FF2D9B)',
+    stripLight: 'linear-gradient(90deg, #5B35B0, #A8005A)',
+    iconBgDark: 'linear-gradient(135deg, rgba(124,58,237,0.3), rgba(255,45,155,0.2))',
+    iconBgLight: '#EDE9F8',
+    iconColor: '#7C3AED',
   },
-  Application: {
-    icon: <AppWindow className="w-5 h-5" />,
-    gradient: 'linear-gradient(90deg, #22c55e, #10b981)',
-    iconBg: 'rgba(34,197,94,0.15)',
-    iconColor: '#22c55e',
+  Other: {
+    icon: MonitorDot,
+    stripDark: 'linear-gradient(90deg, #34D399, #059669)',
+    stripLight: 'linear-gradient(90deg, #16795A, #059669)',
+    iconBgDark: 'rgba(52,211,153,0.15)',
+    iconBgLight: '#D1FAE5',
+    iconColor: '#16795A',
+  },
+  Dashboard: {
+    icon: BarChart2,
+    stripDark: 'linear-gradient(90deg, #00D4FF, rgba(0,212,255,0))',
+    stripLight: 'linear-gradient(90deg, #1D6FA4, rgba(29,111,164,0))',
+    iconBgDark: 'rgba(0,212,255,0.12)',
+    iconBgLight: '#E0F0FA',
+    iconColor: '#1D6FA4',
   },
 };
 
-const STATUS_COLOR: Record<string, { bg: string; text: string; dot: string }> = {
-  Live:        { bg: 'rgba(34,197,94,0.15)',  text: '#22c55e', dot: '#22c55e' },
-  UAT:         { bg: 'rgba(245,158,11,0.15)', text: '#f59e0b', dot: '#f59e0b' },
-  WIP:         { bg: 'rgba(99,102,241,0.15)', text: '#818cf8', dot: '#818cf8' },
-  Development: { bg: 'rgba(99,102,241,0.15)', text: '#818cf8', dot: '#818cf8' },
+const TYPE_DISPLAY: Record<string, string> = {
+  Dashboard: 'Dashboard',
+  Genie: 'Genie',
+  Other: 'Application',
 };
 
-export default function AppCard({ app, isFav, onToggleFav }: AppCardProps) {
+const statusConfig: Record<string, { label: string; dot: string; styleDark: React.CSSProperties; styleLight: React.CSSProperties }> = {
+  Live: {
+    label: 'Live',
+    dot: '#22D3EE',
+    styleDark:  { background: 'rgba(0,212,255,0.1)',   border: '1px solid rgba(0,212,255,0.35)',   color: '#00D4FF' },
+    styleLight: { background: '#E0F0FA',                border: '1px solid #93C5E8',                color: '#1D6FA4' },
+  },
+  Development: {
+    label: 'Development',
+    dot: '#A78BFA',
+    styleDark:  { background: 'rgba(167,139,250,0.1)', border: '1px solid rgba(167,139,250,0.35)', color: '#A78BFA' },
+    styleLight: { background: '#EDE9F8',                border: '1px solid #C4B5F0',                color: '#5B35B0' },
+  },
+};
+
+export default function AppCard({ app, index, isFavorite, onToggleFavorite }: {
+  app: App;
+  index: number;
+  isFavorite: boolean;
+  onToggleFavorite: (id: number) => void;
+}) {
   const [toggling, setToggling] = useState(false);
 
-  const typeConfig = TYPE_CONFIG[app.app_type] ?? TYPE_CONFIG['Application'];
-  const statusStyle = STATUS_COLOR[app.app_status] ?? { bg: 'rgba(107,114,128,0.15)', text: '#9ca3af', dot: '#6b7280' };
+  const type = typeConfig[app.app_type] || typeConfig.Dashboard;
+  const TypeIcon = type.icon;
+  const status = statusConfig[app.app_status] || statusConfig.Development;
 
+  const handleLaunch = () => {
+    if (app.url_link) window.open(app.url_link, '_blank', 'noopener,noreferrer');
+  };
+
+  // ── DB-backed favourite toggle ──
   const handleFav = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (toggling) return;
@@ -69,137 +101,125 @@ export default function AppCard({ app, isFav, onToggleFav }: AppCardProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ app_id: app.app_id }),
       });
-      onToggleFav(app.app_id);
+      onToggleFavorite(app.app_id);
     } catch {
-      // silent fail — optimistic update already applied
+      // silent fail — optimistic update already applied by parent
     } finally {
       setToggling(false);
     }
   };
 
-  const handleLaunch = () => {
-    if (!app.url_link) return;
-    fetch('/api/audit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ app_id: app.app_id, action_type: 'VIEW' }),
-    }).catch(() => {});
-    window.open(app.url_link, '_blank', 'noopener,noreferrer');
-  };
-
-  // Build tag pills: dept, subdivision, status
-  const pills = [
-    app.dept_name,
-    app.subdivision,
-    app.app_status,
-  ].filter(Boolean);
+  const isDark = typeof document !== 'undefined'
+    ? document.documentElement.getAttribute('data-theme') !== 'light'
+    : true;
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 12 }}
+    <motion.article
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.2 }}
-      className="group relative flex flex-col rounded-2xl overflow-hidden transition-all duration-200 hover:translate-y-[-2px]"
+      transition={{ duration: 0.3, delay: Math.min(index * 0.03, 0.3) }}
+      className="group flex flex-col rounded-2xl overflow-hidden relative"
       style={{
         background: 'var(--surface)',
         border: '1px solid var(--border)',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.2)',
+        transition: 'border-color 0.2s, box-shadow 0.2s, transform 0.2s',
+      }}
+      whileHover={{ y: -3 }}
+      onMouseEnter={e => {
+        const el = e.currentTarget as HTMLElement;
+        el.style.borderColor = isDark ? 'rgba(0,212,255,0.35)' : '#93C5E8';
+        el.style.boxShadow = isDark
+          ? '0 0 20px rgba(0,212,255,0.08), 0 8px 24px rgba(0,0,0,0.35)'
+          : '0 4px 16px rgba(0,0,0,0.10)';
+      }}
+      onMouseLeave={e => {
+        const el = e.currentTarget as HTMLElement;
+        el.style.borderColor = 'var(--border)';
+        el.style.boxShadow = 'none';
       }}
     >
-      {/* Gradient top bar */}
-      <div className="h-1 w-full flex-shrink-0" style={{ background: typeConfig.gradient }} />
+      {/* Colour strip top */}
+      <div className="h-0.5 w-full shrink-0" style={{ background: isDark ? type.stripDark : type.stripLight }} />
 
-      {/* Card body */}
-      <div className="flex flex-col gap-3 p-4 flex-1">
+      <div className="p-3 sm:p-4 flex flex-col gap-2 sm:gap-3 flex-1">
 
-        {/* Icon + star row */}
+        {/* Icon row + star */}
         <div className="flex items-start justify-between">
-          <div
-            className="flex items-center justify-center w-11 h-11 rounded-xl"
-            style={{ background: typeConfig.iconBg, color: typeConfig.iconColor }}
-          >
-            {typeConfig.icon}
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: isDark ? type.iconBgDark : type.iconBgLight }}>
+            <TypeIcon className="w-4 h-4" style={{ color: type.iconColor }} />
           </div>
           <button
             onClick={handleFav}
             disabled={toggling}
-            aria-label={isFav ? 'Remove from favourites' : 'Add to favourites'}
-            className="p-1 rounded-lg transition-all duration-150 hover:scale-110 mt-0.5"
-            style={{ color: isFav ? '#f59e0b' : 'var(--text2)' }}
+            className="p-1 rounded-lg transition-all touch-manipulation"
+            style={{ color: isFavorite ? '#FBBF24' : 'var(--text2)', opacity: isFavorite ? 1 : 0.4 }}
+            aria-label={isFavorite ? 'Remove from favourites' : 'Add to favourites'}
           >
-            <Star
-              className="w-4 h-4"
-              fill={isFav ? '#f59e0b' : 'none'}
-              strokeWidth={isFav ? 0 : 1.5}
-            />
+            <Star className={`w-3.5 h-3.5 ${isFavorite ? 'fill-amber-400' : ''}`} />
           </button>
         </div>
 
-        {/* App name */}
-        <p className="font-semibold text-sm leading-snug line-clamp-2" style={{ color: 'var(--text)' }}>
-          {app.app_name}
-        </p>
+        {/* Name + description */}
+        <div className="flex-1 min-w-0">
+          <h3 className="text-sm font-semibold leading-snug line-clamp-2 mb-1" style={{ color: 'var(--text)' }}>
+            {app.app_name}
+          </h3>
+          {app.description && (
+            <p className="text-xs line-clamp-2 leading-relaxed" style={{ color: 'var(--text2)' }}>
+              {app.description}
+            </p>
+          )}
+        </div>
 
-        {/* Tag pills */}
-        <div className="flex flex-wrap gap-1.5">
+        {/* Badges: dept + subdivision + status */}
+        <div className="flex items-center gap-1.5 flex-wrap">
           {app.dept_name && (
-            <span className="text-[11px] font-medium px-2 py-0.5 rounded-full"
-              style={{ background: 'var(--surface2)', color: 'var(--text2)' }}>
+            <span className="px-2 py-0.5 rounded-lg text-xs font-medium"
+              style={isDark
+                ? { background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.2)', color: '#00D4FF' }
+                : { background: '#E0F0FA', border: '1px solid #93C5E8', color: '#1D6FA4' }
+              }>
               {app.dept_name}
             </span>
           )}
           {app.subdivision && app.subdivision !== app.dept_name && (
-            <span className="text-[11px] font-medium px-2 py-0.5 rounded-full"
-              style={{ background: 'var(--surface2)', color: 'var(--text2)' }}>
+            <span className="px-2 py-0.5 rounded-lg text-xs"
+              style={isDark
+                ? { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text2)' }
+                : { background: '#F4F6FB', border: '1px solid #D1D5DB', color: '#4B5563' }
+              }>
               {app.subdivision}
             </span>
           )}
-          {/* Status pill */}
-          <span className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full"
-            style={{ background: statusStyle.bg, color: statusStyle.text }}>
-            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: statusStyle.dot }} />
-            {app.app_status}
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-medium"
+            style={isDark ? status.styleDark : status.styleLight}>
+            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: status.dot }} />
+            {status.label}
           </span>
         </div>
 
-        {/* Spacer */}
-        <div className="flex-1" />
-
         {/* Launch button */}
-        {app.url_link ? (
-          <button
-            onClick={handleLaunch}
-            className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold transition-all duration-150 mt-1"
-            style={{
-              background: typeConfig.iconBg,
-              color: typeConfig.iconColor,
-              border: `1px solid ${typeConfig.iconColor}33`,
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLButtonElement).style.background = typeConfig.gradient;
-              (e.currentTarget as HTMLButtonElement).style.color = '#000';
-              (e.currentTarget as HTMLButtonElement).style.border = 'none';
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLButtonElement).style.background = typeConfig.iconBg;
-              (e.currentTarget as HTMLButtonElement).style.color = typeConfig.iconColor;
-              (e.currentTarget as HTMLButtonElement).style.border = `1px solid ${typeConfig.iconColor}33`;
-            }}
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-            Launch
-          </button>
-        ) : (
-          <div
-            className="w-full flex items-center justify-center py-2 rounded-xl text-xs font-medium mt-1 opacity-30 cursor-not-allowed"
-            style={{ background: 'var(--surface2)', color: 'var(--text2)' }}
-          >
-            WIP
-          </div>
-        )}
+        <button
+          onClick={handleLaunch}
+          disabled={!app.url_link}
+          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all touch-manipulation disabled:opacity-40 disabled:cursor-not-allowed"
+          style={isDark
+            ? { background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.2)', color: '#00D4FF' }
+            : { background: '#E0F0FA', border: '1px solid #93C5E8', color: '#1D6FA4' }
+          }
+          onMouseEnter={e => {
+            if (!app.url_link) return;
+            (e.currentTarget as HTMLElement).style.background = isDark ? 'rgba(0,212,255,0.18)' : '#BFE0F5';
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLElement).style.background = isDark ? 'rgba(0,212,255,0.08)' : '#E0F0FA';
+          }}
+        >
+          <ExternalLink className="w-3 h-3 shrink-0" />
+          {app.url_link ? 'Launch' : 'Coming Soon'}
+        </button>
       </div>
-    </motion.div>
+    </motion.article>
   );
 }
