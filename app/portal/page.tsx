@@ -40,7 +40,6 @@ function FilterDropdown({
           background: 'var(--surface)',
           border: '1px solid var(--border)',
           color: 'var(--text)',
-          focusRingColor: 'var(--primary)',
         }}
       >
         {options.map((o) => <option key={o} value={o}>{o === 'All' ? label : o}</option>)}
