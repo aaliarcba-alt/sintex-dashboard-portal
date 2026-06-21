@@ -67,7 +67,7 @@ export default function LoginPage() {
           >
             <BarChart3 className="w-8 h-8 text-cyan-400" />
           </motion.div>
-          <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text)' }}>Sintex Digital Portal</h1>
+          <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text)' }}>Welspun Sintex Digital Portal</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text2)' }}>
             Enterprise Intelligence Portal
           </p>
