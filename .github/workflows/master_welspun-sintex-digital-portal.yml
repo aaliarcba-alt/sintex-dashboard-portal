@@ -1,4 +1,3 @@
-cat > .github/workflows/master_welspun-sintex-digital-portal.yml << 'EOF'
 name: Build and deploy Node.js app to Azure Web App - welspun-sintex-digital-portal
 
 on:
@@ -59,4 +58,3 @@ jobs:
           slot-name: 'Production'
           package: .
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_3128AF3C8B8C434EB053252568D12236 }}
-EOF
