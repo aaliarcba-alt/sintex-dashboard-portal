@@ -1,3 +1,4 @@
+cat > .github/workflows/master_welspun-sintex-digital-portal.yml << 'EOF'
 name: Build and deploy Node.js app to Azure Web App - welspun-sintex-digital-portal
 
 on:
@@ -22,7 +23,7 @@ jobs:
 
       - name: npm install and build
         run: |
-          npm install
+          npm install --legacy-peer-deps
           npm run build
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -37,7 +38,6 @@ jobs:
             .next/
             public/
             package.json
-            package-lock.json
             next.config.js
             node_modules/
 
@@ -59,3 +59,4 @@ jobs:
           slot-name: 'Production'
           package: .
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_3128AF3C8B8C434EB053252568D12236 }}
+EOF
