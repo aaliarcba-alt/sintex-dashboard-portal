@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ['mssql'],
-  },
+  serverExternalPackages: ['mssql'],
 };
 
 module.exports = nextConfig;
